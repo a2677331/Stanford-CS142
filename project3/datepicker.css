@@ -1,0 +1,30 @@
+html {
+    background-color: ghostwhite;
+}
+
+table,
+th,
+td {
+    border: 1px solid black;
+    text-align: center;
+}
+
+table {
+    background-color: lightgrey;
+}
+
+.calendar-header {
+    background-color: pink;
+}
+
+.pre-month-cell {
+    background-color: lightgreen;
+}
+
+.post-month-cell {
+    background-color: darkturquoise;
+}
+
+.curr-month-cell {
+    background-color: rgb(255, 221, 0);
+}
