@@ -49,11 +49,7 @@ class DatePicker {
 
   handleArrow(table, date, rightArrow=false) {
     table.remove();
-    if (rightArrow) {
-      date.setMonth(date.getMonth() + 1);
-    } else {
-      date.setMonth(date.getMonth() - 1);
-    }
+    date.setMonth(rightArrow ? date.getMonth()+1 : date.getMonth()-1);
     this.render(date); // render the calendar again
   }
 
