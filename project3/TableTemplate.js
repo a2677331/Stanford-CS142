@@ -20,16 +20,11 @@ class TableTemplate {
     }
 
     // process the other cells according to dict
+    let elem;
     for (let i = 1; i < rows.length; i++) {  // for each row
-        let elem;
-
-        // if column name is specified, process the cell under that column 
-        if (columnName) {
-            elem = rows[i].cells[index];
-        } else { 
+        // if column name is specified, process only cells under that column 
         // else process cells the whole row
-            elem = rows[i];
-        }
+        elem = columnName ? rows[i].cells[index] : rows[i];
 
         const cellProcesor = new Cs142TemplateProcessor(elem.innerHTML); // process
         elem.innerHTML = cellProcesor.fillIn(dict); // ouptut
