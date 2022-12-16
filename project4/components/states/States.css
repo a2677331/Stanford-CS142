@@ -1,0 +1,28 @@
+/*
+CSS for the CS142 project #4 Problem #2 states component
+
+Since CSS uses a global name space for classes we should use names starting with
+cs142-states- here.
+*/
+
+.cs142-states-styles h1 {
+    color: darkred;
+}
+
+.cs142-states-styles h2 {
+    color: darkblue;
+}
+
+.cs142-states-styles label,
+.cs142-states-styles input {
+    font-weight: bold;
+}
+
+.cs142-states-styles ul {
+    color: blue;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+}
+
+.cs142-states-styles h2:last-child {
+    color: red;
+}
