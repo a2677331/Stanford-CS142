@@ -23,7 +23,7 @@ class States extends React.Component {
   // Construct list of states JSX
   outputStates() {
     const userInput = this.state.selectedState;
-    const title = `Filter the states by: "${userInput}"`;
+    const title = `Filter the states by "${userInput}"`;
     let filteredStates = this.states.filter(state => state.toLowerCase().includes(userInput.toLowerCase())); // filter out state that contains substring of user input
     const listItems = [];
 
@@ -43,8 +43,7 @@ class States extends React.Component {
           onChange={this.handleStatesChangeBound}
         />
         <h2>{title}</h2>
-        { (listItems.length !== 0) && (<ul>{listItems}</ul>) }
-        { (listItems.length === 0) && (<h2>No Results</h2>) }
+        { (listItems.length === 0) ? <h2>No Results</h2> : <ul>{listItems}</ul> }
       </div>
     );
   }
