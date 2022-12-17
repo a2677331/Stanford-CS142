@@ -37,3 +37,10 @@ you use won't conflict with these names.
   color: blue;
   background: lightgrey;
 }
+
+
+.motto-update p,
+.motto-update input,
+.motto-update label {
+  color: red;
+}

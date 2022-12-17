@@ -1,6 +1,8 @@
 import React from "react";
 import "./Example.css";
 
+import Header from "../header/header.jsx";
+
 /*
   Since this component shows code we include the https://prismjs.com/
   formatter. We invoke it by labelling code blocks with class="language-jsx"
@@ -34,11 +36,10 @@ class Example extends React.Component {
     // generate new functions that handle the event by just calling
     // the method that handles the event.
     this.handleChangeBound = (event) => this.handleChange(event);
+    this.handleMottoChange = this.handleMottoChange.bind(this);
     // Note: A commmon idiom in React code is to use JavaScript bind() to
     // smash the method to accomplish this passthrough to the method:
     //      this.handleChange = this.handleChange.bind(this);
-
-    this.handleMottoChangeBound = (event) => this.handleMottoChange(event);
   }
 
   // React components have several "lifecycle functions"
@@ -107,20 +108,23 @@ class Example extends React.Component {
 
   render() {
     return (
+      <React.Fragment>
+      <Header></Header>
       <div className="container Example">
+        
         <h1>CS142 Project#4 React.js Example</h1>
 
         <div className="motto-update">
           {
             <div>
               <h1>{this.state.name}</h1>
-              <p>{this.state.motto}</p>
-              <label htmlFor="mottoId">Write Your Motto Here:</label>
+              <p>My Motto: {this.state.motto}</p>
+              <label htmlFor="mottoId">Update Your Motto:</label>
               <input
                 id="mottoId"
                 type="text"
                 value={this.state.motto}
-                onChange={this.handleMottoChangeBound}
+                onChange={this.handleMottoChange}
               />
             </div>
           }
@@ -418,6 +422,7 @@ class Example extends React.Component {
           </button>
         </div>
       </div>
+      </React.Fragment>
     );
   }
 }
