@@ -1,50 +1,52 @@
-import React from 'react';
-import {
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-}
-from '@material-ui/core';
-import './userList.css';
+import * as React from "react";
+import { Link } from "react-router-dom";
+import { List, ListItem, ListItemText } from "@material-ui/core";
+import "./userList.css";
+import { server } from "../../lib/fetchModelData";
 
 /**
  * Define UserList, a React componment of CS142 project #5
+ * Generate a list of items from users' names,
+ * and link to user's detail when clicked
  */
 class UserList extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      users: null,
+    };
+  }
+
+  // load user list when page first load or user refreash
+  componentDidMount() {
+      const usersUrl = "http://localhost:3000/user/list";
+      server.fetchModel(usersUrl).then(response => { 
+        this.setState({ users: response.data });
+      });
   }
 
   render() {
+    // Create a link only after user is loaded, or show loading prompt.
+    let userList; // Link component
+    if (this.state.users) {
+      userList = (
+        this.state.users.map((user) => (
+          <ListItem to={`/users/${user._id}`} component={Link} key={user._id} divider button >
+            {/* Link's to must be direct link address */}
+            <ListItemText primary={user.first_name + " " + user.last_name} />
+          </ListItem>
+        )));
+    } else {
+      userList = <ListItem>Loading...</ListItem>;
+    }
+
     return (
-      <div>
-        <Typography variant="body1">
-          This is the user list, which takes up 3/12 of the window.
-          You might choose to use <a href="https://mui.com/components/lists/">Lists</a> and <a href="https://mui.com/components/dividers/">Dividers</a> to
-          display your users like so:
-        </Typography>
-        <List component="nav">
-          <ListItem>
-            <ListItemText primary="Item #1" />
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <ListItemText primary="Item #2" />
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <ListItemText primary="Item #3" />
-          </ListItem>
-          <Divider />
-        </List>
-        <Typography variant="body1">
-          The model comes in from window.cs142models.userListModel()
-        </Typography>
-      </div>
+      <List component="nav">
+        { userList }
+      </List>
     );
   }
+
 }
 
 export default UserList;

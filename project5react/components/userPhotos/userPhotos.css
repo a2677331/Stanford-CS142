@@ -1,0 +1,24 @@
+img {
+    display: block;
+    width: 50%;
+  }
+
+li.cs142-main-photo-author {
+    /* Center list item */
+    align-items: center;
+    justify-content: start;
+  }
+
+li.cs142-main-photo-author, li.cs142-main-photo-comments {
+  /* Change font type */
+  font-size: 1rem;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.00938em;
+}
+
+li.cs142-main-comments div p {
+  font-size: 22px;
+  color: rgb(116, 0, 224);
+}

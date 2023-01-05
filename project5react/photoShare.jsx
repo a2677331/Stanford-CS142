@@ -25,36 +25,31 @@ class PhotoShare extends React.Component {
       <div>
       <Grid container spacing={8}>
         <Grid item xs={12}>
-          <TopBar/>
+          <Switch>
+            <Route path="/users/:userId" render={ props => <TopBar {...props} />} />
+            {/* when URL /users/ has user ID after ":", will enter the <Route/> component */}
+            <Route path="/photos/:userId" render={ props => <TopBar {...props} />} />
+            {/* when URL /photos/ has user ID after ":", will enter the <Route/> component */}
+            <Route render={ props => <TopBar {...props} /> } />
+            {/* when just load the "/photo-share.html", will enter the <TopBar/> component */}
+          </Switch>
         </Grid>
         <div className="cs142-main-topbar-buffer"/>
         <Grid item sm={3}>
-          <Paper className="cs142-main-grid-item">
+          <Paper className="cs142-main-grid-item" elevation={3}>
             <UserList />
           </Paper>
         </Grid>
         <Grid item sm={9}>
-          <Paper className="cs142-main-grid-item">
+          <Paper className="cs142-main-grid-item" elevation={3}>
             <Switch>
-            <Route exact path="/"
-                render={() => (
-                <Typography variant="body1">
-                  Welcome to your photosharing app! This <a href="https://mui.com/components/paper/">Paper</a> component
-                  displays the main content of the application. The {"sm={9}"} prop in
-                  the <a href="https://mui.com/components/grid/">Grid</a> item component makes it responsively
-                  display 9/12 of the window. The Switch component enables us to conditionally render different
-                  components to this part of the screen. You don&apos;t need to display anything here on the homepage,
-                  so you should delete this Route component once you get started.
-                </Typography>
-                )}
-              />
-              <Route path="/users/:userId"
-                render={ props => <UserDetail {...props} /> }
-              />
-              <Route path="/photos/:userId"
-                render ={ props => <UserPhotos {...props} /> }
-              />
-              <Route path="/users" component={UserList}  />
+              <Route exact path="/" render={() => (
+                <Typography variant="h3">Welcome to my photosharing app!</Typography>
+                )}/>
+              <Route path="/users/:userId" render={ props => <UserDetail {...props} /> } />
+              <Route path="/photos/:userId" render ={ props => <UserPhotos {...props} /> } />
+              <Route path="/users" component={UserList} />
+              {/* Route's path uses ":userId" so that component can access that parameter */}
             </Switch>
           </Paper>
         </Grid>
