@@ -37,7 +37,7 @@ class TopBar extends React.Component {
   componentDidUpdate(prevProps) {
     const prevUserID = prevProps.match.params.userId;
     const currUserID = this.props.match.params.userId;
-    // update user'name if there is a different ID, and don't load if in homepage
+    // update user'name if there is a different ID
     if (prevUserID !== currUserID && currUserID) {
         const UrlToLoad = `http://localhost:3000/user/${currUserID}`;
         server.fetchModel(UrlToLoad).then(response => { this.setState({ user: response.data });});
@@ -57,7 +57,6 @@ class TopBar extends React.Component {
           </Typography>
           <Typography variant="h5" color="inherit" >
             { this.props.match.path.includes("/photos/") && "Photos of " }
-            {/* { this.state.user && `${this.state.user.first_name} ${this.state.user.last_name}` } */}
             { this.props.match.params.userId && this.state.user && `${this.state.user.first_name} ${this.state.user.last_name}` }
             {/* this.props.match.params.userId is null then is in homepage, don't show user name */}
           </Typography>

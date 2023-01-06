@@ -20,6 +20,8 @@ var Promise = require("Promise");
   */
   function fetchModel(url) {
     return new Promise(function(resolve, reject) {
+        console.log("Fetching data from: ", url);
+
         // Load via AJAX
         const request = new XMLHttpRequest();
         request.onreadystatechange = function() {
