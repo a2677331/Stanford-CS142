@@ -17,7 +17,19 @@ import UserPhotos from './components/userPhotos/userPhotos';
 class PhotoShare extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      userName: null,
+    };
   }
+
+  /**
+   * To get user name from child component and return back for TopBar to display
+   * @param userName user last name and first name
+   */
+  handleUserNameChange = userName => {
+    console.log("Receive: ", userName);
+    this.setState({ userName: userName });
+  };
 
   render() {
     return (
@@ -26,12 +38,9 @@ class PhotoShare extends React.Component {
       <Grid container spacing={8}>
         <Grid item xs={12}>
           <Switch>
-            <Route path="/users/:userId" render={ props => <TopBar {...props} />} />
-            {/* when URL /users/ has user ID after ":", will enter the <Route/> component */}
-            <Route path="/photos/:userId" render={ props => <TopBar {...props} />} />
-            {/* when URL /photos/ has user ID after ":", will enter the <Route/> component */}
-            <Route render={ props => <TopBar {...props} /> } />
-            {/* when just load the "/photo-share.html", will enter the <TopBar/> component */}
+            <Route path="/users/:userId" render={ props => <TopBar {...props} userName={this.state.userName}/> }/>
+            <Route path="/photos/:userId" render={ props => <TopBar {...props} userName={this.state.userName}/> }/>
+            <Route render={ props => <TopBar {...props} userName={this.state.userName}/> }/>
           </Switch>
         </Grid>
         <div className="cs142-main-topbar-buffer"/>
@@ -46,8 +55,8 @@ class PhotoShare extends React.Component {
               <Route exact path="/" render={() => (
                 <Typography variant="h3">Welcome to my photosharing app!</Typography>
                 )}/>
-              <Route path="/users/:userId" render={ props => <UserDetail {...props} /> } />
-              <Route path="/photos/:userId" render ={ props => <UserPhotos {...props} /> } />
+              <Route path="/users/:userId" render={ props => <UserDetail {...props} handler={this.handleUserNameChange}/>} />
+              <Route path="/photos/:userId" render ={ props => <UserPhotos {...props} handler={this.handleUserNameChange}/> } />
               <Route path="/users" component={UserList} />
               {/* Route's path uses ":userId" so that component can access that parameter */}
             </Switch>
@@ -58,6 +67,7 @@ class PhotoShare extends React.Component {
       </HashRouter>
     );
   }
+
 }
 
 

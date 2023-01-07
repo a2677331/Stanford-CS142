@@ -1,8 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { List, ListItem, ListItemText} from "@material-ui/core";
+import { Button, Box, Grid, Typography } from "@material-ui/core";
 import "./userDetail.css";
 import { server } from "../../lib/fetchModelData";
+
 
 
 /**
@@ -22,11 +23,15 @@ class UserDetail extends React.Component {
       const userUrl = `http://localhost:3000/user/${this.props.match.params.userId}`;
       server.fetchModel(userUrl).then(response => { 
         this.setState({ user: response.data });
+        this.props.handler(response.data.first_name + ' ' + response.data.last_name);
       });
     }
   }
 
-  // load data user click on different user list and show the user's detail
+  /**
+   * load data user click on different user list and show the user's detail
+   * ! component is not re-rendering when the route changes, componentDidUpdate() can detect route changes.
+   */
   componentDidUpdate(prevProps) {
     const prevUserID = prevProps.match.params.userId;
     const currUserID = this.props.match.params.userId;
@@ -34,41 +39,49 @@ class UserDetail extends React.Component {
       const UrlToLoad = `http://localhost:3000/user/${currUserID}`;
       server.fetchModel(UrlToLoad).then(response => { 
         this.setState({ user: response.data });
+        this.props.handler(response.data.first_name + ' ' + response.data.last_name);
       });
     }
   }
 
   render() {
-    let linkToUserPhotos; // Link component
-    
-    // Create a link only after user is loaded, or show loading prompt.
-    if (this.state.user) {
-      linkToUserPhotos = (
-        <ListItem to={ this.state.user && `/photos/${this.state.user._id}` } component={Link} >
-          <ListItemText primary={"See User Photos"} /> {/* Link's to must be direct link address */}
-        </ListItem>
-        );
-    } else {
-      linkToUserPhotos = <ListItem>Loading...</ListItem>;
-    }
 
-
-    return (
-      <List component="ul" disablePadding>
-        <ListItem>
-          <ListItemText primary={ this.state.user && `Name: ${this.state.user.first_name} ${this.state.user.last_name}`} />
-        </ListItem>
-        <ListItem>
-          <ListItemText primary={ this.state.user && `Description: ${this.state.user.description}`} />
-        </ListItem>
-        <ListItem>
-          <ListItemText primary={ this.state.user && `Location: ${this.state.user.location}`} />
-        </ListItem>
-        <ListItem>
-          <ListItemText primary={ this.state.user && `Occupation: ${this.state.user.occupation}`} />
-        </ListItem>
-        { linkToUserPhotos }
-      </List>
+    return this.state.user ? (
+      <Grid container>
+        <Grid item xs={12}>
+          <Typography color="textSecondary">Name:</Typography>
+          <Typography variant="h6" gutterBottom>
+            {`${this.state.user.first_name} ${this.state.user.last_name}`}
+          </Typography>
+          <Typography color="textSecondary">Description:</Typography>
+          <Typography variant="h6" gutterBottom>
+            {`${this.state.user.description}`}
+          </Typography>
+          <Typography color="textSecondary">Location:</Typography>
+          <Typography variant="h6" gutterBottom>
+            {`${this.state.user.location}`}
+          </Typography>
+          <Typography color="textSecondary">Occupation:</Typography>
+          <Typography variant="h6" gutterBottom>
+            {`${this.state.user.occupation}`}
+          </Typography>
+        </Grid>
+        <Grid item xs={4}/>
+        <Grid item xs={4}>
+          <Button
+            size="large"
+            to={this.state.user && `/photos/${this.state.user._id}`}
+            component={Link}
+            variant="contained"
+            color="primary"
+          >
+            See Photos
+          </Button>
+        </Grid>
+        <Grid item xs={4}/>
+      </Grid>
+    ) : (
+      <Box sx={{ minWidth: 300 }}>Loading...</Box>
     );
   }
 }
