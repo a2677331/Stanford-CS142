@@ -31,11 +31,11 @@
 
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
-
 var async = require('async');
 
+// ExpressJS App
 var express = require('express');
-var app = express();
+var app = express();   
 
 // Load the Mongoose schema for User, Photo, and SchemaInfo
 var User = require('./schema/user.js');
@@ -45,19 +45,26 @@ var SchemaInfo = require('./schema/schemaInfo.js');
 // XXX - Your submission should work without this line. Comment out or delete this line for tests and before submission!
 var cs142models = require('./modelData/photoApp.js').cs142models;
 
+// Connect to the MongoDB instance
 mongoose.connect('mongodb://localhost/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
 
 // We have the express static module (http://expressjs.com/en/starter/static-files.html) do all
 // the work for us.
 app.use(express.static(__dirname));
+/**
+ * The __dirname is a global variable that represents the directory name of the current module.
+ * So, when a client makes a request for a file, the Express application will check the current 
+ * directory for the file and return it to the client if it exists. 
+ */
 
 
 app.get('/', function (request, response) {
+    console.log('Simple web server of files from ' + __dirname);
     response.send('Simple web server of files from ' + __dirname);
 });
 
 /*
- * Use express to handle argument passing in the URL.  This .get will cause express
+ * Use Express to handle argument passing in the URL.  This .get will cause express
  * To accept URLs with /test/<something> and return the something in request.params.p1
  * If implement the get as follows:
  * /test or /test/info - Return the SchemaInfo object of the database in JSON format. This
@@ -103,16 +110,16 @@ app.get('/test/:p1', function (request, response) {
         ];
         async.each(collections, function (col, done_callback) {
             col.collection.countDocuments({}, function (err, count) {
-                col.count = count;
+                col.count = count; // adding count property into collections's element
                 done_callback(err);
             });
         }, function (err) {
             if (err) {
                 response.status(500).send(JSON.stringify(err));
             } else {
-                var obj = {};
+                var obj = {};  // count obj
                 for (var i = 0; i < collections.length; i++) {
-                    obj[collections[i].name] = collections[i].count;
+                    obj[collections[i].name] = collections[i].count; // assign each count value into the count obj
                 }
                 response.end(JSON.stringify(obj));
 
@@ -128,7 +135,18 @@ app.get('/test/:p1', function (request, response) {
  * URL /user/list - Return all the User object.
  */
 app.get('/user/list', function (request, response) {
-    response.status(200).send(cs142models.userListModel());
+
+    // response.status(200).send(cs142models.userListModel());
+
+    User.find({}, function(err, users) {
+        if (err) {
+            console.log("Error!");
+            response.status(500).send(JSON.stringify(err));
+        } else {
+            console.log("Success!");
+            response.status(200).send(JSON.stringify(users));
+        }
+    });
 });
 
 /*
@@ -164,5 +182,3 @@ var server = app.listen(3000, function () {
     var port = server.address().port;
     console.log('Listening at http://localhost:' + port + ' exporting the directory ' + __dirname);
 });
-
-

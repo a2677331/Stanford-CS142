@@ -16,6 +16,10 @@ var commentSchema = new mongoose.Schema({
     comment: String,     // The text of the comment.
     date_time: {type: Date, default: Date.now}, // The date and time when the comment was created.
     user_id: mongoose.Schema.Types.ObjectId,    // 	The ID of the user who created the comment.
+    // A specific data type that is used to store unique
+    //  identifiers for documents within a MongoDB collection,
+    //
+    // Also to create a relationship between different collections.
 });
 
 // create a schema for Photo
