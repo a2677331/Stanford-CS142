@@ -1,9 +1,10 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography } from '@material-ui/core';
 import './TopBar.css';
-import fetchModel from "../../lib/fetchModelData";
+import axios from "axios";
 
 /**
+ * * Jian Zhong
  * Define TopBar, a React componment of CS142 project #5
  */
 class TopBar extends React.Component {
@@ -18,11 +19,31 @@ class TopBar extends React.Component {
    * Show version number in TopBar, execute once first render is completed.
    */
   componentDidMount() {
-    // load version number from server
-    const infoUrl = "http://localhost:3000/test/info";
-    fetchModel(infoUrl).then(response => { 
+
+    // Load version number from server
+    const url = "http://localhost:3000/test/info";
+
+    // Use Axios to send request and set the version state variable.
+    axios.get(url)
+      .then(response => {
+      // Handle success
+      console.log("** Succes: fetched data from " + url +" **");
       this.setState({ version: response.data.__v });
+
+    }).catch(error => {
+      // Handle error
+      if (error.response) {
+        // if status code from server is out of the range of 2xx.
+        console.log("** Error: status code from server is out of the range of 2xx. **\n", error.response.status);
+      } else if (error.request) {
+        // if request was made and no response was received.
+        console.log("** Error: request was made and no response was received. **\n", error.request);
+      } else {
+        // something happened in the setting up the request
+        console.log("** Error: something happened in the setting up the request. **\n", error.message);
+      }
     });
+
   }
 
   render() {

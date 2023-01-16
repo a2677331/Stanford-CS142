@@ -26,7 +26,6 @@
  * /user/:id      -  Returns the User object with the _id of id. (JSON format).
  * /photosOfUser/:id' - Returns an array with all the photos of the User (id). Each photo
  *                      should have all the Comments on the Photo (JSON format)
- *
  */
 
 var mongoose = require('mongoose');
@@ -42,14 +41,11 @@ var User = require('./schema/user.js');
 var Photo = require('./schema/photo.js');
 var SchemaInfo = require('./schema/schemaInfo.js');
 
-// XXX - Your submission should work without this line. Comment out or delete this line for tests and before submission!
-var cs142models = require('./modelData/photoApp.js').cs142models;
-
 // Connect to the MongoDB instance
 mongoose.connect('mongodb://localhost/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
 
-// We have the express static module (http://expressjs.com/en/starter/static-files.html) do all
-// the work for us.
+// We have the express static module (http://expressjs.com/en/starter/static-files.html) 
+// do all the work for us.
 app.use(express.static(__dirname));
 /**
  * The __dirname is a global variable that represents the directory name of the current module.
@@ -62,6 +58,7 @@ app.get('/', function (request, response) {
     console.log('Simple web server of files from ' + __dirname);
     response.send('Simple web server of files from ' + __dirname);
 });
+
 
 /*
  * Use Express to handle argument passing in the URL.  This .get will cause express
@@ -119,7 +116,8 @@ app.get('/test/:p1', function (request, response) {
             } else {
                 var obj = {};  // count obj
                 for (var i = 0; i < collections.length; i++) {
-                    obj[collections[i].name] = collections[i].count; // assign each count value into the count obj
+                    obj[collections[i].name] = collections[i].count; 
+                    // assign each count value into the count obj
                 }
                 response.end(JSON.stringify(obj));
 
@@ -131,51 +129,130 @@ app.get('/test/:p1', function (request, response) {
     }
 });
 
+
 /*
+ * Jian Zhong
  * URL /user/list - Return all the User object.
  */
 app.get('/user/list', function (request, response) {
-
-    // response.status(200).send(cs142models.userListModel());
-
     User.find({}, function(err, users) {
+        // Error handling
         if (err) {
-            console.log("Error!");
+            console.log("** Get user list: Error! **");
             response.status(500).send(JSON.stringify(err));
+        } 
+
+        /**
+         * "user" returned from Mongoose is Array type: Array of user objects.
+         * also need to be processed as Mongoose models and models from frontend do not allign perpectly.
+         */
+        console.log("** Read server path /user/list Success! **");
+        const desiredProperties = ["first_name", "last_name", "_id"]; // the wanted user properties from Mongoose model
+        const userList = JSON.parse(JSON.stringify(users));          // convert Mongoose data to Javascript obj
+
+        /**
+         * Get only wanted user proeprties from Database's model, 
+         * and construct a new users obj.
+         */ 
+        const newUsers = userList.map(user => {
+            const newUser = {};
+            desiredProperties.forEach(property => {
+                if (Object.prototype.hasOwnProperty.call(user, property)) { // unsave if "user.hasOwnProperty(property)"
+                    newUser[property] = user[property];
+                }
+            });
+            return newUser; // construct a new user obj for each original user obj
+        });
+        response.json(newUsers);
+    });
+});
+
+
+/*
+ * Jian Zhong
+ * URL /user/:id - Return the information for User (id)
+ */
+app.get('/user/:id', function (request, response) {
+    const id = request.params.id;
+
+    /**
+     * Finding a single user from user's ID
+     */
+    User.findOne({_id: id}, function(err, user) {
+        if (err) {
+            console.log(`** User ${id}: Not Found! **`);
+            response.status(400).send(JSON.stringify(err));
         } else {
-            console.log("Success!");
-            response.status(200).send(JSON.stringify(users));
+            console.log(`** Read server path /user/${id} Success! **`);
+            const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
+            delete userObj.__v;                               // remove unnecessary property
+            response.json(userObj);
         }
     });
 });
 
-/*
- * URL /user/:id - Return the information for User (id)
- */
-app.get('/user/:id', function (request, response) {
-    var id = request.params.id;
-    var user = cs142models.userModel(id);
-    if (user === null) {
-        console.log('User with _id:' + id + ' not found.');
-        response.status(400).send('Not found');
-        return;
-    }
-    response.status(200).send(user);
-});
 
-/*
- * URL /photosOfUser/:id - Return the Photos for User (id)
+/**
+ * * Jian Zhong 
+ * * URL /photosOfUser/:id - Return the Photos for User (id)
  */
 app.get('/photosOfUser/:id', function (request, response) {
     var id = request.params.id;
-    var photos = cs142models.photoOfUserModel(id);
-    if (photos.length === 0) {
-        console.log('Photos for user with _id:' + id + ' not found.');
-        response.status(400).send('Not found');
-        return;
-    }
-    response.status(200).send(photos);
+
+    /**
+     * Finding a single user from user's ID
+     */
+    Photo.find({user_id: id}, function (err, photos) {
+        if (err) {
+            console.log(`** Photos for user with id ${id}: Not Found! *`);
+            response.status(400).send(JSON.stringify(`** Photos for user with id ${id}: Not Found **`));
+        } else {
+            console.log(`** Read server path /photosOfUser/${id} Success! **`);
+            let count = 0;                                        // count the number of processed photos 
+            const photoList = JSON.parse(JSON.stringify(photos)); // convert from mongoose data to JS data
+            photoList.forEach(photo => {
+                delete photo.__v;   // for each photo, remove the unnessary property before sending to client.
+    
+                /**
+                 * ! Since we're fetching multiple modules (Photo and User), we need to use "async.each()"?????????????????????????????
+                 */
+                // use async() to load user obj into comment[user] from looking up the comment.user_id.
+                async.each(photo.comments, (comment, callback) => {
+                    User.findOne({_id: comment.user_id}, function (error, user) {
+                        if (!error) {
+                            /**
+                             * For each retrieved Mongoose user data, convert it to JS user data type, 
+                             * ,and remove unnessary properties, user should only keep (_id, first_name, last_name) properties.
+                             *  */ 
+                            const userObj = JSON.parse(JSON.stringify(user)); // parse retrieved Mongoose user data
+                            let { location, description, occupation, __v, ...rest } = userObj; // remove unnessary properties
+    
+                            /**
+                             * Update comment's user property
+                             */
+                            const commentIndex = photo.comments.indexOf(comment); // index of a commment in a photo's comment list
+                            photo.comments[commentIndex].user = rest;    // adding user obj to each comment
+                            delete photo.comments[commentIndex].user_id;    // remove unnessary property for each comment
+                        }
+                        callback(error);
+                    });
+                }, function (error) {
+                    if (error) {
+                        response.status(400).send(JSON.stringify(`** Photos for user with id ${id}: Not Found **`));
+                    } else {
+                        // Response to client only after aysnc.each() has processed all Photos in photoList.
+                        count += 1;
+                        if (count === photoList.length) {
+                            console.log("Done all  async() processing");
+                            response.json(photoList);  // Response to client, finanly!
+                        }
+                    }
+                });
+            });
+        }
+    });    
 });
+
 
 
 var server = app.listen(3000, function () {

@@ -2,11 +2,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button, Box, Grid, Typography } from "@material-ui/core";
 import "./userDetail.css";
-import fetchModel from "../../lib/fetchModelData";
-
+import axios from "axios";
 
 
 /**
+ * * Jian Zhong
  * Define UserDetail, a React componment of CS142 project #5
  */
 class UserDetail extends React.Component {
@@ -17,14 +17,36 @@ class UserDetail extends React.Component {
     };
   }
 
+  // Use Axios to send request and update the user state variable.
+  fetchData_axios(url) {
+    axios.get(url)
+    .then((response) => {
+      // Handle success:
+      console.log("** Succes: fetched data from " + url + " **");
+      this.setState({ user: response.data });
+      this.props.handler( response.data.first_name + " " + response.data.last_name );
+    })
+    .catch((error) => {
+      // Handle error:
+      if (error.response) {
+        // if status code from server is out of the range of 2xx.
+        console.log("** Error: status code from server is out of the range of 2xx. **\n", error.response.status);
+      } else if (error.request) {
+        // if request was made and no response was received.
+        console.log("** Error: request was made and no response was received. **\n", error.request);
+      } else {
+        // something happened in the setting up the request
+        console.log("** Error: something happened in the setting up the request. **\n", error.message);
+      }
+    });
+  }
+
   // load data when page first load or refreash
   componentDidMount() {
-    if (this.props.match.params.userId) { // only when there is id
-      const userUrl = `http://localhost:3000/user/${this.props.match.params.userId}`;
-      fetchModel(userUrl).then(response => { 
-        this.setState({ user: response.data });
-        this.props.handler(response.data.first_name + ' ' + response.data.last_name);
-      });
+    // Make request to server only when there is id
+    if (this.props.match.params.userId) {
+      const url = `http://localhost:3000/user/${this.props.match.params.userId}`;
+      this.fetchData_axios(url);
     }
   }
 
@@ -36,11 +58,8 @@ class UserDetail extends React.Component {
     const prevUserID = prevProps.match.params.userId;
     const currUserID = this.props.match.params.userId;
     if (prevUserID !== currUserID && currUserID) {
-      const UrlToLoad = `http://localhost:3000/user/${currUserID}`;
-      fetchModel(UrlToLoad).then(response => { 
-        this.setState({ user: response.data });
-        this.props.handler(response.data.first_name + ' ' + response.data.last_name);
-      });
+      const url = `http://localhost:3000/user/${currUserID}`;
+      this.fetchData_axios(url);
     }
   }
 
@@ -65,7 +84,7 @@ class UserDetail extends React.Component {
             {`${this.state.user.occupation}`}
           </Typography>
         </Grid>
-        <Grid item xs={4}/>
+        <Grid item xs={4} />
         <Grid item xs={4}>
           <Button
             size="large"
@@ -77,10 +96,12 @@ class UserDetail extends React.Component {
             See Photos
           </Button>
         </Grid>
-        <Grid item xs={4}/>
+        <Grid item xs={4} />
       </Grid>
     ) : (
-      <Box sx={{ minWidth: 300 }}>Loading...</Box>
+      <Box sx={{ minWidth: 300 }}>
+        Loading User Detail on &quot;userDetail.jsx&quot;
+      </Box>
     );
   }
 }

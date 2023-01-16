@@ -23,11 +23,11 @@ class PhotoShare extends React.Component {
   }
 
   /**
+   * * Jian Zhong
    * To get user name from child component and return back for TopBar to display
    * @param userName user last name and first name
    */
   handleUserNameChange = userName => {
-    console.log("Receive: ", userName);
     this.setState({ userName: userName });
   };
 
@@ -67,9 +67,7 @@ class PhotoShare extends React.Component {
       </HashRouter>
     );
   }
-
 }
-
 
 ReactDOM.render(
   <PhotoShare />,
