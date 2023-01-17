@@ -28,18 +28,19 @@
  *                      should have all the Comments on the Photo (JSON format)
  */
 
+// Setup Mongoose database
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var async = require('async');
-
-// ExpressJS App
-var express = require('express');
-var app = express();   
 
 // Load the Mongoose schema for User, Photo, and SchemaInfo
 var User = require('./schema/user.js');
 var Photo = require('./schema/photo.js');
 var SchemaInfo = require('./schema/schemaInfo.js');
+
+// ExpressJS App
+var express = require('express');
+var app = express();   
 
 // Connect to the MongoDB instance
 mongoose.connect('mongodb://localhost/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
@@ -135,36 +136,52 @@ app.get('/test/:p1', function (request, response) {
  * URL /user/list - Return all the User object.
  */
 app.get('/user/list', function (request, response) {
+
     User.find({}, function(err, users) {
         // Error handling
         if (err) {
             console.log("** Get user list: Error! **");
             response.status(500).send(JSON.stringify(err));
-        } 
+        } else {
+            /**
+             * "user" returned from Mongoose is Array type: Array of user objects.
+             * also need to be processed as Mongoose models and models from frontend do not allign perpectly.
+             */
+            console.log("** Read server path /user/list Success! **");
+            const userList = JSON.parse(JSON.stringify(users));    // convert Mongoose data to Javascript obj
 
-        /**
-         * "user" returned from Mongoose is Array type: Array of user objects.
-         * also need to be processed as Mongoose models and models from frontend do not allign perpectly.
-         */
-        console.log("** Read server path /user/list Success! **");
-        const desiredProperties = ["first_name", "last_name", "_id"]; // the wanted user properties from Mongoose model
-        const userList = JSON.parse(JSON.stringify(users));          // convert Mongoose data to Javascript obj
+            /**
+             * * async method with "async.each()"
+             */
+            // const newUserList = [];
+            // async.each(userList, (user, doneCallback) => {
+            //     const { first_name, last_name, _id } = user;
+            //     newUserList.push({ first_name, last_name, _id }); 
+            //     doneCallback(err);
+            //     console.log("From async: ", newUserList);
+            // }, error => {
+            //     if (error) {
+            //         console.log(error);
+            //     } else {
+            //         response.json(newUserList);
+            //     }
+            // });
 
-        /**
-         * Get only wanted user proeprties from Database's model, 
-         * and construct a new users obj.
-         */ 
-        const newUsers = userList.map(user => {
-            const newUser = {};
-            desiredProperties.forEach(property => {
-                if (Object.prototype.hasOwnProperty.call(user, property)) { // unsave if "user.hasOwnProperty(property)"
-                    newUser[property] = user[property];
-                }
+            /**
+             * * non-async method
+             * Get only wanted user proeprties from Database's model, 
+             * and construct a new users obj to response.
+             */
+            const newUsers = userList.map(user => {
+                const { first_name, last_name, _id } = user;
+                return { first_name, last_name, _id };
             });
-            return newUser; // construct a new user obj for each original user obj
-        });
-        response.json(newUsers);
+
+            // Send response to client
+            response.json(newUsers);
+        }
     });
+
 });
 
 
@@ -202,53 +219,43 @@ app.get('/photosOfUser/:id', function (request, response) {
     /**
      * Finding a single user from user's ID
      */
-    Photo.find({user_id: id}, function (err, photos) {
+    Photo.find({user_id: id}, (err, photos) => {
         if (err) {
             console.log(`** Photos for user with id ${id}: Not Found! *`);
             response.status(400).send(JSON.stringify(`** Photos for user with id ${id}: Not Found **`));
         } else {
             console.log(`** Read server path /photosOfUser/${id} Success! **`);
             let count = 0;                                        // count the number of processed photos 
-            const photoList = JSON.parse(JSON.stringify(photos)); // convert from mongoose data to JS data
+            const photoList = JSON.parse(JSON.stringify(photos)); // get data from server and convert to JS data
+
+            // For each photo in photos list:
             photoList.forEach(photo => {
-                delete photo.__v;   // for each photo, remove the unnessary property before sending to client.
-    
-                /**
-                 * ! Since we're fetching multiple modules (Photo and User), we need to use "async.each()"?????????????????????????????
-                 */
-                // use async() to load user obj into comment[user] from looking up the comment.user_id.
-                async.each(photo.comments, (comment, callback) => {
-                    User.findOne({_id: comment.user_id}, function (error, user) {
+                delete photo.__v;  // remove the unnessary property before sending to client.
+
+                // For each comment in comments list: 
+                async.eachOf(photo.comments, (comment, index, callback) => {
+                    // Use comment's user_id to get user object and update comment's user property.
+                    User.findOne({_id: comment.user_id}, (error, user) => {
                         if (!error) {
-                            /**
-                             * For each retrieved Mongoose user data, convert it to JS user data type, 
-                             * ,and remove unnessary properties, user should only keep (_id, first_name, last_name) properties.
-                             *  */ 
                             const userObj = JSON.parse(JSON.stringify(user)); // parse retrieved Mongoose user data
-                            let { location, description, occupation, __v, ...rest } = userObj; // remove unnessary properties
-    
-                            /**
-                             * Update comment's user property
-                             */
-                            const commentIndex = photo.comments.indexOf(comment); // index of a commment in a photo's comment list
-                            photo.comments[commentIndex].user = rest;    // adding user obj to each comment
-                            delete photo.comments[commentIndex].user_id;    // remove unnessary property for each comment
+                            const {location, description, occupation, __v, ...rest} = userObj; // only keep (_id, first_name, last_name) properties
+                            photo.comments[index].user = rest;      // update the user obj to each comment's user property.
+                            delete photo.comments[index].user_id;   // remove unnessary property for each comment
                         }
                         callback(error);
                     });
-                }, function (error) {
+                }, error => {
+                    count += 1;
                     if (error) {
                         response.status(400).send(JSON.stringify(`** Photos for user with id ${id}: Not Found **`));
-                    } else {
+                    } else if (count === photoList.length) {
                         // Response to client only after aysnc.each() has processed all Photos in photoList.
-                        count += 1;
-                        if (count === photoList.length) {
-                            console.log("Done all  async() processing");
-                            response.json(photoList);  // Response to client, finanly!
-                        }
+                        console.log("Done all  async() processing");
+                        response.json(photoList);  // Response to client, finanly!
                     }
-                });
-            });
+                }); // end of "async.eachOf(photo.comments,)"
+            }); // end of "photoList.forEach(photo)"
+
         }
     });    
 });
