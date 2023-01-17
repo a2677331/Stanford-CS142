@@ -233,6 +233,9 @@ app.get('/photosOfUser/:id', function (request, response) {
                 delete photo.__v;  // remove the unnessary property before sending to client.
 
                 // For each comment in comments list: 
+                /**
+                 * ! To fecth multiple modules, need to use async.each().
+                 */
                 async.eachOf(photo.comments, (comment, index, callback) => {
                     // Use comment's user_id to get user object and update comment's user property.
                     User.findOne({_id: comment.user_id}, (error, user) => {
