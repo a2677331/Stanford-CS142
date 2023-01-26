@@ -22,10 +22,6 @@ class UserList extends React.Component {
   componentDidMount() {
     const url = "http://localhost:3000/user/list";
 
-    // fetchModel(usersUrl).then((response) => {
-    //   this.setState({ users: response.data });
-    // });
-
     // Use Axios to send request and update the users state variable.
     axios.get(url)
       .then((response) => {
