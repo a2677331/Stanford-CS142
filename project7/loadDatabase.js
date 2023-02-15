@@ -13,7 +13,6 @@
  * NOTE: This scripts uses Promise abstraction for handling the async calls to
  * the database. We are not teaching Promises in CS142 so strongly suggest you don't
  * use them in your solution.
- *
  */
 
 // We use the Mongoose to define the schema stored in MongoDB.
