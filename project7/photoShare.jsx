@@ -53,7 +53,7 @@ class PhotoShare extends React.Component {
     return (
       <HashRouter>
       <div>
-      <Grid container spacing={8}>
+      <Grid container spacing={1}>
 
         {/* TopBar View */}
         <Grid item xs={12}>
@@ -73,7 +73,7 @@ class PhotoShare extends React.Component {
         
         {/* Sidebar View */}
         <Grid item sm={3}>
-        <Paper className="cs142-main-grid-item" elevation={3}>
+        <Paper className="side-bar" elevation={3}>
           <UserList />
         </Paper>
         </Grid>

@@ -52,11 +52,6 @@ class UserList extends React.Component {
           <ListItemText primary={user.first_name + " " + user.last_name} />
         </ListItem>
       ));
-    } else {
-      // User list does not exist, display message.
-      userList = (
-        <ListItem>Loading User List on &quot;userList.jsx&quot;</ListItem>
-      );
     }
 
     return <List component="nav">{userList}</List>;

@@ -96,30 +96,29 @@ app.post('/admin/login', (request, response) => {
      * if match, send back greeting to client
      * if not match, send 400 status code(Bad Request).
      */
-    User
-    .findOne({ login_name: loginName })
-    .then(user => {
-        // Login name NOT exists, response status 400 and info "Login name is not a valid account"
-        if (!user) {
-            console.log(`** User ${loginName}: Not Found! **`);
-            response.status(400).send("Status: 400, Login name is NOT found.");
-        } else {
-        // Login name exists, reply with information for logged in user
-            const userObj = JSON.parse(JSON.stringify(user)); // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
-            console.log("Before storing session: ", request.session);
-            request.session.userID = userObj._id;          // save login user id to session
-            response.status(200).send({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
-            console.log("After storing session: ", request.session);
-            /**
-             * * Why can't send object below as a response?
-             * * { first_name: user.first_name, lastName: user.last_name }
-             * * Answer: you didn't user "JSON.parse(JSON.stringify(user))" to convert data before sending out.
-             */
-        }
-    })
-    .catch(error => {
-        console.error(`** Error occured: ${error}. **`);
-    });
+    User.findOne({ login_name: loginName })
+        .then(user => {
+            // Login name NOT exists, response status 400 and info "Login name is not a valid account"
+            if (!user) {
+                console.log(`** User ${loginName}: Not Found! **`);
+                response.status(400).send("Status: 400, Login name is NOT found.");
+            } else {
+            // Login name exists, reply with information for logged in user
+                const userObj = JSON.parse(JSON.stringify(user)); // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
+                request.session.userInfo = `${userObj.first_name} ${userObj.last_name}: ${userObj._id}`;          // save login user id to session
+                response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
+                /**
+                 * * Why can't send object below as a response?
+                 * * { first_name: user.first_name, lastName: user.last_name }
+                 * * Answer: you didn't user "JSON.parse(JSON.stringify(user))" to convert data before sending out.
+                 */
+                console.log("SessionID: ", request.sessionID);
+                // console.log("Session: ", request.session);
+            }
+        })
+        .catch(error => {
+            console.error(`** Error occured: ${error}. **`);
+        });
 });
 
 
@@ -137,12 +136,24 @@ app.post('/admin/logout', (request, response) => {
         if (err) response.status(400).send("Status: 400, you are currently logged out.");
         else console.log("Session Destoryed");
      });
-
 });
 
 
-app.get('/', function (request, response) {
+/**
+ * * Jian Zhong: Project 7
+ * * Function to check if the user is logged,
+ * * only logged user can continue next step.
+ * @param request 
+ * @param response 
+ * @param next 
+ */
+function isAuthenticated(request, response, next) {
+    if (request.session.userInfo) next();
+    else response.status(401);
+}
 
+
+app.get('/', isAuthenticated, function (request, response) {
     console.log('Simple web server of files from ' + __dirname);
     response.send('Simple web server of files from ' + __dirname);
 });
@@ -156,9 +167,12 @@ app.get('/', function (request, response) {
  *                       is good for testing connectivity with  MongoDB.
  * /test/counts - Return an object with the counts of the different collections in JSON format
  */
-app.get('/test/:p1', function (request, response) {
+app.get('/test/:p1', isAuthenticated, function (request, response) {
     // Express parses the ":p1" from the URL and returns it in the request.params objects.
-    console.log('/test called with param1 = ', request.params.p1);
+    // console.log('/test called with param1 = ', request.params.p1);
+    /**
+     * ! delete, will be recovered
+     */
 
     var param = request.params.p1 || 'info';
 
@@ -208,7 +222,6 @@ app.get('/test/:p1', function (request, response) {
                     // assign each count value into the count obj
                 }
                 response.end(JSON.stringify(obj));
-
             }
         });
     } else {
@@ -222,7 +235,7 @@ app.get('/test/:p1', function (request, response) {
  * Jian Zhong
  * URL /user/list - Return all the User object.
  */
-app.get('/user/list', function (request, response) {
+app.get('/user/list', isAuthenticated, function (request, response) {
 
     User.find({}, function(err, users) {
         // Error handling
@@ -276,7 +289,7 @@ app.get('/user/list', function (request, response) {
  * Jian Zhong
  * URL /user/:id - Return the information for User (id)
  */
-app.get('/user/:id', function (request, response) {
+app.get('/user/:id', isAuthenticated, function (request, response) {
     const id = request.params.id;
 
     /**
@@ -300,7 +313,7 @@ app.get('/user/:id', function (request, response) {
  * * Jian Zhong 
  * * URL /photosOfUser/:id - Return the Photos for User (id)
  */
-app.get('/photosOfUser/:id', function (request, response) {
+app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
     var id = request.params.id;
 
     /**
@@ -355,5 +368,8 @@ app.get('/photosOfUser/:id', function (request, response) {
 
 var server = app.listen(3000, () => {
     var port = server.address().port;
-    console.log('Listening at http://localhost:' + port + ' exporting the directory ' + __dirname);
+    // console.log('Listening at http://localhost:' + port + ' exporting the directory ' + __dirname);
+    /**
+     * ! will be uncommanted
+     */
 });

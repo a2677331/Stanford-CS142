@@ -6,10 +6,15 @@ cs142-main- here.
 */
 
 .cs142-main-topbar-buffer {
-  margin-top: 70px;
+  margin-top: 63px;
 }
 
 .cs142-main-grid-item {
-  /* height: calc(100vh - 85px); */
+  height: 95%;
   padding: 20px;
+  /* height: calc(100vh - 85px); */
+}
+
+body {
+  background: rgb(234, 233, 233);
 }

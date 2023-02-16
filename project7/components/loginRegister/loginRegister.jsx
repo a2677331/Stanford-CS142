@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Redirect } from 'react-router-dom';
 import axios from "axios";
-import { Typography, Grid } from "@material-ui/core";
+import { Typography, Grid, FormControl, InputLabel, Input, Button } from "@material-ui/core";
 
 /**
  * * Jian Zhong
@@ -29,17 +29,17 @@ class LoginRegister extends React.Component {
   /**
   * Control form sumbit
   * use Axios to send POST request with both login name and password to server
-  * ! always use Axios to send request and update the users state variable
+  * * always use Axios to send request and update the users state variable
   * */ 
-  handleLoginSubmit = (event) => { // async: to use "await" inside the func
+  handleLoginSubmit = event => { // async: to use "await" inside the func
     event.preventDefault();  // prevent submit form and reload page behavior.
     console.log("Sending loginInfo to server: ", this.state.loginName + "  " + this.state.password);
-
     const url = "/admin/login"; // server endpoint for login
     const loginInfo = {         // login info to server
       login_name: this.state.loginName, 
       password: this.state.password 
     };  
+
 
     // axios to send a POST request with login info
     axios
@@ -66,46 +66,33 @@ class LoginRegister extends React.Component {
 
     // else, just display login page.
     return (
-      <Grid container direction="column" alignItems="center" style={{ minHeight: '40vh' }}>
-
+      <Grid container direction="column" alignItems="center">
+        {/* Welcome prompt */}
         <Grid item>
           <Typography variant="h5">Welcome to Fakebook!</Typography>
         </Grid>
         <br/>
-
-        <Grid item xs={8}>
-            <form onSubmit={this.handleLoginSubmit}>
-              <label>
-                Login Name:
-                <input
-                  name="loginName"
-                  type="text"
-                  value={this.state.loginName}
-                  onChange={this.handleInputChange}
-                />
-              </label>
-              <br/>
-              <label>
-                Password:
-                <input
-                  name="password"
-                  type="password"
-                  value={this.state.password}
-                  onChange={this.handleInputChange}
-                />
-              </label>
-              <br/>
-              <button type="submit">Login</button>
-              <br/><br/>
-              {
-                this.state.isLoggedIn === false ?
-                  <Typography style={{ color: "red" }}>Not a valid login name, try again</Typography>
-                  :
-                  <Typography>{}</Typography>
-              }
-            </form>
+        {/* Login Form */}
+        <Grid item xs={5}>
+          <form onSubmit={this.handleLoginSubmit}>
+            <FormControl margin="normal" fullWidth>
+              <InputLabel htmlFor="loginName">Login Name:</InputLabel>
+              <Input name="loginName" id="loginName" type="text" autoFocus value={this.state.loginName} onChange={this.handleInputChange}/>
+            </FormControl>
+            <FormControl margin="normal" fullWidth>
+              <InputLabel htmlFor="password">Password:</InputLabel>
+              <Input name="password" id="password" type="password" value={this.state.password} onChange={this.handleInputChange}/>
+            </FormControl>
+            <br/><br/>
+            <Button type="submit" fullWidth variant="contained" color="primary">Login</Button>
+            {
+              this.state.isLoggedIn === false ?
+                <Typography style={{ color: "red" }}>Not a valid login name, try again</Typography>
+                :
+                <Typography>{}</Typography>
+            }
+          </form>
         </Grid>
-
       </Grid>
     );
   }
