@@ -13,7 +13,7 @@ var userSchema = new mongoose.Schema({
     location: String,    // Location  of the user.
     description: String, // A brief user description
     occupation: String,  // Occupation of the user.
-    // login_name: String,  // Identifier the user will type when logging in
+    login_name: String,  // Identifier the user will type when logging in
 });
 
 // the schema is useless so far
