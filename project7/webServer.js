@@ -88,32 +88,26 @@ app.use(bodyParser.json());  // parse application/json
  * Provides a way for the photo app's LoginRegister view to login in a user
  */
 app.post('/admin/login', (request, response) => {
-    console.log(`** Got a log-in POST request containing body **`, request.body);
-    const loginName = request.body.login_name; // get login name from user input
-
     /**
      * See if the request's loginName matches database
      * if match, send back greeting to client
      * if not match, send 400 status code(Bad Request).
      */
-    User.findOne({ login_name: loginName })
+    User.findOne({ login_name: request.body.login_name })
         .then(user => {
             // Login name NOT exists, response status 400 and info "Login name is not a valid account"
             if (!user) {
-                console.log(`** User ${loginName}: Not Found! **`);
                 response.status(400).send("Status: 400, Login name is NOT found.");
             } else {
             // Login name exists, reply with information for logged in user
                 const userObj = JSON.parse(JSON.stringify(user)); // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
-                request.session.userInfo = `${userObj.first_name} ${userObj.last_name}: ${userObj._id}`;          // save login user id to session
+                request.session.userRecord = userObj._id;          // save login user id to session
                 response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
                 /**
                  * * Why can't send object below as a response?
                  * * { first_name: user.first_name, lastName: user.last_name }
                  * * Answer: you didn't user "JSON.parse(JSON.stringify(user))" to convert data before sending out.
                  */
-                console.log("SessionID: ", request.sessionID);
-                // console.log("Session: ", request.session);
             }
         })
         .catch(error => {
@@ -128,14 +122,26 @@ app.post('/admin/login', (request, response) => {
  * An HTTP status of 400 (Bad request) should be returned in the user is not currently logged in
  */
 app.post('/admin/logout', (request, response) => {
-    console.log("Got a log out request");
+    // return status code 400 if user is currently not logged in
+    if (!request.session.userRecord) {
+        response.status(400).send({error: "User is not logged in"});
+        console.log("You already logged out, no need to do again.");
+    } else {
+        // clear the information stored in the session
+        request.session.destroy(err => {
 
-    // clear the information stored in the session
-    request.session.destroy(err => {
-        // return status code 400 to user that is currently not logged in
-        if (err) response.status(400).send("Status: 400, you are currently logged out.");
-        else console.log("Session Destoryed");
+        // return status code 400 if error occurs during destroying session
+        if (err) {
+            response.sendStatus(400);
+            console.log("Error in destroying the session");
+        }
+        else {
+            // Delete session successfully, send 200 code!
+            response.sendStatus(200);
+            console.log("OK");
+        }
      });
+    }
 });
 
 
@@ -148,8 +154,15 @@ app.post('/admin/logout', (request, response) => {
  * @param next 
  */
 function isAuthenticated(request, response, next) {
-    if (request.session.userInfo) next();
-    else response.status(401);
+    if (request.session.userRecord) {
+        console.log("Authenticattion Passes.");
+        next();
+    }
+    else {
+        console.log("Authenticattion Failed.");
+        response.status(401).json({ message: 'Unauthorized' });
+        // ! You forgot to send the status, .json() or .send() neeed.
+    }
 }
 
 
@@ -169,11 +182,6 @@ app.get('/', isAuthenticated, function (request, response) {
  */
 app.get('/test/:p1', isAuthenticated, function (request, response) {
     // Express parses the ":p1" from the URL and returns it in the request.params objects.
-    // console.log('/test called with param1 = ', request.params.p1);
-    /**
-     * ! delete, will be recovered
-     */
-
     var param = request.params.p1 || 'info';
 
     if (param === 'info') {
@@ -235,7 +243,13 @@ app.get('/test/:p1', isAuthenticated, function (request, response) {
  * Jian Zhong
  * URL /user/list - Return all the User object.
  */
-app.get('/user/list', isAuthenticated, function (request, response) {
+
+/**
+ * ! solved wating for /user/list response forever:
+ * ! because of isAuthenticated() middleware,
+ * ! requst to this path will hang forever.
+ */
+app.get('/user/list', isAuthenticated ,function (request, response) {
 
     User.find({}, function(err, users) {
         // Error handling
@@ -296,14 +310,14 @@ app.get('/user/:id', isAuthenticated, function (request, response) {
      * Finding a single user from user's ID
      */
     User.findOne({_id: id}, function(err, user) {
-        if (err) {
+        if (err) {          // data not found
             console.log(`** User ${id}: Not Found! **`);
             response.status(400).send(JSON.stringify(err));
-        } else {
-            console.log(`** Read server path /user/${id} Success! **`);
+        } else {            // found data!
             const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
+            console.log(`** Read server path /user/${id} Success! **`);
             delete userObj.__v;                               // remove unnecessary property
-            response.json(userObj);
+            response.status(200).json(userObj);
         }
     });
 });
@@ -334,7 +348,7 @@ app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
 
                 // For each comment in comments list: 
                 /**
-                 * ! To fecth multiple modules, need to use async.each().
+                 * * To fecth multiple modules, need to use async.each().
                  */
                 async.eachOf(photo.comments, (comment, index, callback) => {
                     // Use comment's user_id to get user object and update comment's user property.
@@ -368,8 +382,5 @@ app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
 
 var server = app.listen(3000, () => {
     var port = server.address().port;
-    // console.log('Listening at http://localhost:' + port + ' exporting the directory ' + __dirname);
-    /**
-     * ! will be uncommanted
-     */
+    console.log('Listening at http://localhost:' + port + ' exporting the directory ' + __dirname);
 });

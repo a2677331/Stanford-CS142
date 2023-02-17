@@ -14,9 +14,8 @@ class LoginRegister extends React.Component {
     this.state = {
       loginName: "",
       password: "",
-      isLoggedIn: undefined,
-      loggedIn_user: undefined,
     };
+    this.isLogged = null; // use for prompting user when login fails
   }
 
 
@@ -33,38 +32,41 @@ class LoginRegister extends React.Component {
   * */ 
   handleLoginSubmit = event => { // async: to use "await" inside the func
     event.preventDefault();  // prevent submit form and reload page behavior.
-    console.log("Sending loginInfo to server: ", this.state.loginName + "  " + this.state.password);
+    console.log("Sending login Info to server: ", this.state.loginName + "  " + this.state.password);
+
+    // axios to send a POST request with login info
     const url = "/admin/login"; // server endpoint for login
     const loginInfo = {         // login info to server
       login_name: this.state.loginName, 
       password: this.state.password 
     };  
 
-
-    // axios to send a POST request with login info
     axios
       .post(url, loginInfo) // POST request sent!
       .then(response => {   // Handle success
-        this.setState({ isLoggedIn: true, loggedIn_user: response.data }); // update user's first name and logged info
-        this.props.handler(response.data, true);  // for passing loggin user data and logged info back to TopBar
-        console.log(`** Success from LoginRegister: receved 200 response **`, response); 
+        console.log(`LoginRegister loggin Success!`); 
+        this.isLogged = true;  
+        this.props.handler(response.data);  // for passing loggin user data and logged info back to TopBar
       })
       .catch(error => {     // Handle error
-        this.setState({ isLoggedIn: false, loggedIn_user: null }); // update user's first name and logged info
-        this.props.handler(null, false);  // for passing loggin user's first name and logged info back to TopBar
-        console.log(`** Error from LoginRegister: receved 400 response **`, error); 
+        console.log(`LoginRegister loggin Fail!`); 
+        this.isLogged = false;     
+        this.props.handler(null);  // for passing loggin user's first name and logged info back to TopBar
         console.log(error);
       });
   };
   
 
   render() {
+
     // Within login page, if user is authorized, redirect to that user's detail page.
-    if (this.state.isLoggedIn) {
-      return <Redirect to={`/users/${this.state.loggedIn_user._id}`} />;
+    const loginUser = this.props.loginUser;
+    if (loginUser) {
+      return <Redirect from="/login-register" to={`/users/${loginUser._id}`} />;
+       // the state prop in <Redirect> is used to pass data between components when using client-side routing
     }
 
-    // else, just display login page.
+    // else, just show login page:
     return (
       <Grid container direction="column" alignItems="center">
         {/* Welcome prompt */}
@@ -85,12 +87,7 @@ class LoginRegister extends React.Component {
             </FormControl>
             <br/><br/>
             <Button type="submit" fullWidth variant="contained" color="primary">Login</Button>
-            {
-              this.state.isLoggedIn === false ?
-                <Typography style={{ color: "red" }}>Not a valid login name, try again</Typography>
-                :
-                <Typography>{}</Typography>
-            }
+            { this.isLogged === false && <Typography style={{ color: "red" }}>Not a valid login name, try again</Typography> }
           </form>
         </Grid>
       </Grid>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import { List, Divider, Typography, Grid, Avatar, Card, CardHeader, CardMedia, CardContent } from "@material-ui/core";
 import "./userPhotos.css";
 import axios from "axios";
@@ -51,6 +51,10 @@ class UserPhotos extends React.Component {
   }
 
   render() {
+    // redirect to login page if not logged in
+    if (!this.props.loginUser) {
+      return <Redirect to={`/login-register`} />;
+    }
 
     // If there is user, then render below component to link to user detail page
     let linkToAuthor; // Link component to Author
@@ -65,7 +69,7 @@ class UserPhotos extends React.Component {
     }
 
     // If there is user photo, then display user photos
-    return this.state.photos ? (
+    return this.state.photos && (
       <Grid justifyContent="center" container spacing={3} >
         {this.state.photos.map((photo) => (
           <Grid item xs={6} key={photo._id}>
@@ -89,8 +93,7 @@ class UserPhotos extends React.Component {
                   </Typography>
                 )}
                 {/* Only when photo has comments, then display related comments */}
-                {photo.comments &&
-                  photo.comments.map((c) => (
+                {photo.comments && photo.comments.map((c) => (
                     <List key={c._id}>
                       <Typography variant="subtitle2">
                         <Link to={`/users/${c.user._id}`}>
@@ -115,8 +118,6 @@ class UserPhotos extends React.Component {
           </Grid>
         ))}
       </Grid>
-    ) : (
-      <div >Loading User Photos on &quot;userPhotos.jsx&quot;</div>
     );
   }
 

@@ -1,11 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {
-  HashRouter, Route, Switch, Redirect
-} from 'react-router-dom';
-import {
-  Grid, Typography, Paper
-} from '@material-ui/core';
+import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
+import { Grid, Typography, Paper } from '@material-ui/core';
 import './styles/main.css';
 
 // import necessary components
@@ -19,37 +15,30 @@ class PhotoShare extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      userName: null,            // user currently viewing
-      loginUser: null,           // user that login into the app
-      isLoggedIn: false          // if the user is logged in
+      userName: null,            // which user the login user is viewing
+      loginUser: null,           // login user's first name and id
     };
   }
 
   /**
-   * * Jian Zhong
    * To get user name from child component and return back for TopBar to display
    * @param userName user last name and first name
    */
-  handleUserNameChange = userName => {
-    this.setState({ userName: userName });
-  };
+  handleUserNameChange = userName => this.setState({ userName: userName });
 
   /**
-   * * Jian Zhong
    * To get login user name from child component and return back for TopBar to display
    * @param loginUser user's id and first name
-   * @param isLoggedIn if user is logged in
    */
-  handleLoginUserChange = (loginUser, isLoggedIn) => {
-    this.setState({ 
-      loginUser: loginUser,
-      isLoggedIn: isLoggedIn,
-     });
+  handleLoginUserChange = loginUser => {
+    this.setState({ loginUser: loginUser });
+    console.log("Update logout state OK.");
   };
 
 
   render() {
     const paths = ["/users/:userId", "/photos/:userId", ""]; // paths to render Topbar
+
     return (
       <HashRouter>
       <div>
@@ -62,7 +51,7 @@ class PhotoShare extends React.Component {
             { 
               paths.map(path => (
                 <Route key={path} path={path}>
-                  {props => <TopBar {...props} userName={this.state.userName} loginUser={this.state.loginUser} isLoggedIn={this.state.isLoggedIn}/>}
+                  {props => <TopBar {...props} handler={this.handleLoginUserChange} userName={this.state.userName} loginUser={this.state.loginUser}/>}
                 </Route>
               ))
             }
@@ -74,46 +63,47 @@ class PhotoShare extends React.Component {
         {/* Sidebar View */}
         <Grid item sm={3}>
         <Paper className="side-bar" elevation={3}>
-          <UserList />
+          <UserList loginUser={this.state.loginUser}/>
         </Paper>
         </Grid>
         
-        {/* Main Content View */}
+        {/* Main View */}
         <Grid item sm={9}>
           <Paper className="cs142-main-grid-item" elevation={3}>
             {/* ALl unauthorized visit would go to login page */}
-              {
-                this.state.isLoggedIn ?
-                  (
-                    <Switch>
-                      {/* Authorized user View */}
-                      <Route path="/users/:userId">
-                        { props => <UserDetail {...props} handler={this.handleUserNameChange}/> }
-                        {/* Pass "props": to use "this.props.match.params" */}
-                      </Route>   
-                      <Route path="/photos/:userId">
-                        { props => <UserPhotos {...props} handler={this.handleUserNameChange}/> }
-                      </Route>   
-                      <Route path="/users">
-                        <UserList />
-                      </Route>     
-                      <Route path="/">
-                        <Typography variant="h3">Welcome to my photosharing app!</Typography>
-                      </Route>
-                    </Switch>                                                 
-                  )
-                  :
-                  (
-                    <>
-                      {/* Unauthorized user View */}
-                      <Route path="/login-register">
-                        {/* Login/Register View */}
-                        <LoginRegister handler={this.handleLoginUserChange}/>
-                      </Route>
-                      <Redirect to="/login-register" />
-                    </>
-                  )
-              }
+              <Switch>
+                {/* Login/Register View */}
+                <Route path="/login-register">
+                  <LoginRegister handler={this.handleLoginUserChange} loginUser={this.state.loginUser}  />
+                </Route>
+                {/* User detail View */}
+                <Route path="/users/:userId">
+                  { props => <UserDetail {...props} handler={this.handleUserNameChange} loginUser={this.state.loginUser}/> }
+                  {/* Pass "props": to use "this.props.match.params" */}
+                </Route>   
+                {/* User photo View */}
+                <Route path="/photos/:userId">
+                  { props => <UserPhotos {...props} handler={this.handleUserNameChange} loginUser={this.state.loginUser}/> }
+                </Route>   
+                {/* User list View */}
+                <Route path="/users">
+                  {
+                    this.state.loginUser ?
+                      <UserList loginUser={this.state.loginUser}/>
+                    :
+                      <Redirect to={`/login-register`} />
+                  }
+                </Route>     
+                {/* Home page View */}
+                <Route path="/">
+                  {
+                    this.props.loginUser ?
+                      <Typography variant="h3">Welcome to my photosharing app!</Typography>
+                    :
+                      <Redirect to={`/login-register`} />
+                  }
+                </Route>
+              </Switch>                                                 
           </Paper>
         </Grid>   
       </Grid>
@@ -122,7 +112,6 @@ class PhotoShare extends React.Component {
     ); // end of return
   } // end of render
 } 
-
 
 
 ReactDOM.render(

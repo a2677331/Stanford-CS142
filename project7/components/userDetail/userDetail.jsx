@@ -1,6 +1,6 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { Button, Box, Grid, Typography } from "@material-ui/core";
+import { Link, Redirect } from "react-router-dom";
+import { Button, Grid, Typography } from "@material-ui/core";
 import "./userDetail.css";
 import axios from "axios";
 
@@ -42,7 +42,7 @@ class UserDetail extends React.Component {
 
   /**
    * load data user click on different user list and show the user's detail
-   * * component is not re-rendering when the route changes, componentDidUpdate() can detect route changes.
+   * ! component is not re-rendering when the route changes, componentDidUpdate() can detect route changes.
    */
   componentDidUpdate(prevProps) {
     const prevUserID = prevProps.match.params.userId;
@@ -54,7 +54,12 @@ class UserDetail extends React.Component {
   }
 
   render() {
-    return this.state.user ? (
+    // redirect to login page if not logged in
+    if (!this.props.loginUser) {
+      return <Redirect to={`/login-register`} />;
+    }
+
+    return this.state.user && (
       <Grid container>
         <Grid item xs={12}>
           <Typography color="textSecondary">Name:</Typography>
@@ -88,10 +93,6 @@ class UserDetail extends React.Component {
         </Grid>
         <Grid item xs={4} />
       </Grid>
-    ) : (
-      <Box sx={{ minWidth: 300 }}>
-        Loading User Detail on &quot;userDetail.jsx&quot;
-      </Box>
     );
   }
 }
