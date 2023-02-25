@@ -42,7 +42,7 @@ class UserPhotos extends React.Component {
         .then(response => { // Handle success
           console.log("** Succes: fetched data from " + url +" **");
           this.setState({ user: response.data });
-          this.props.handler(response.data.first_name + ' ' + response.data.last_name);
+          this.props.onUserNameChange(response.data.first_name + ' ' + response.data.last_name);
         })
         .catch(error => {   // Handle error
           console.log("** Error: **\n", error.message);

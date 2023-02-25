@@ -57,7 +57,7 @@ class TopBar extends React.Component {
       .post('/admin/logout')
       .then(response => {
         if (response.status === 200) {
-          this.props.handler(null);
+          this.props.onLoginUserChange(null);
           console.log("** Log Out succeed: ", response.data);
         }
       })

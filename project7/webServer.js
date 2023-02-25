@@ -33,14 +33,14 @@
  */
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
-mongoose.connect('mongodb://localhost/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect('mongodb://127.0.0.1/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
 
 /**
  * Setup necessary parsers middlewares:
  *  */ 
 const session = require('express-session'); // for handling session management
 const bodyParser = require('body-parser');  // for parsing the JSON encoded POST request bodies
-const multer = require('multer');           // for handling uploading files.
+// const multer = require('multer');           // for handling uploading files.
 var MongoStore = require('connect-mongo')(session);
 
 

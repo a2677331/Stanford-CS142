@@ -10,11 +10,13 @@ cs142-main- here.
 }
 
 .cs142-main-grid-item {
-  height: 95%;
+  height: 80%;
   padding: 20px;
   /* height: calc(100vh - 85px); */
 }
 
 body {
-  background: rgb(234, 233, 233);
+  background: #E8D5B5;
 }
+
+/* 64 80 181 */

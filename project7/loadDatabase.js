@@ -18,8 +18,7 @@
 // We use the Mongoose to define the schema stored in MongoDB.
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
-
-mongoose.connect('mongodb://localhost/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect('mongodb://127.0.0.1/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
 
 // Get the magic models we used in the previous projects.
 var cs142models = require('./modelData/photoApp.js').cs142models;

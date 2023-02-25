@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { StrictMode } from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
 import { Grid, Typography, Paper } from '@material-ui/core';
@@ -16,7 +16,12 @@ class PhotoShare extends React.Component {
     super(props);
     this.state = {
       userName: null,            // which user the login user is viewing
-      loginUser: null,           // login user's first name and id
+      loginUser: null,           
+      /**
+       * * login user's first name and id
+       * * fetched from loginRegister component and pass up to the whole App
+       * * for other child componenets use
+       *  */ 
     };
   }
 
@@ -25,15 +30,12 @@ class PhotoShare extends React.Component {
    * @param userName user last name and first name
    */
   handleUserNameChange = userName => this.setState({ userName: userName });
-
+  
   /**
    * To get login user name from child component and return back for TopBar to display
    * @param loginUser user's id and first name
    */
-  handleLoginUserChange = loginUser => {
-    this.setState({ loginUser: loginUser });
-    console.log("Update logout state OK.");
-  };
+  handleLoginUserChange = loginUser => this.setState({ loginUser: loginUser });
 
 
   render() {
@@ -51,7 +53,7 @@ class PhotoShare extends React.Component {
             { 
               paths.map(path => (
                 <Route key={path} path={path}>
-                  {props => <TopBar {...props} handler={this.handleLoginUserChange} userName={this.state.userName} loginUser={this.state.loginUser}/>}
+                  {props => <TopBar {...props} onLoginUserChange={this.handleLoginUserChange} userName={this.state.userName} loginUser={this.state.loginUser}/>}
                 </Route>
               ))
             }
@@ -74,16 +76,16 @@ class PhotoShare extends React.Component {
               <Switch>
                 {/* Login/Register View */}
                 <Route path="/login-register">
-                  <LoginRegister handler={this.handleLoginUserChange} loginUser={this.state.loginUser}  />
+                  <LoginRegister onLoginUserChange={this.handleLoginUserChange} loginUser={this.state.loginUser}  />
                 </Route>
                 {/* User detail View */}
                 <Route path="/users/:userId">
-                  { props => <UserDetail {...props} handler={this.handleUserNameChange} loginUser={this.state.loginUser}/> }
+                  { props => <UserDetail {...props} onUserNameChange={this.handleUserNameChange} loginUser={this.state.loginUser}/> }
                   {/* Pass "props": to use "this.props.match.params" */}
                 </Route>   
                 {/* User photo View */}
                 <Route path="/photos/:userId">
-                  { props => <UserPhotos {...props} handler={this.handleUserNameChange} loginUser={this.state.loginUser}/> }
+                  { props => <UserPhotos {...props} onUserNameChange={this.handleUserNameChange} loginUser={this.state.loginUser}/> }
                 </Route>   
                 {/* User list View */}
                 <Route path="/users">
@@ -113,8 +115,6 @@ class PhotoShare extends React.Component {
   } // end of render
 } 
 
-
-ReactDOM.render(
-  <PhotoShare />,
-  document.getElementById('photoshareapp'),
-);
+// Create React App
+ReactDOM.render(<StrictMode><PhotoShare/></StrictMode>, 
+document.getElementById('photoshareapp'));

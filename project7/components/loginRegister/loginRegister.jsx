@@ -8,7 +8,8 @@ import { Typography, Grid, FormControl, InputLabel, Input, Button } from "@mater
  * * Project 7 codes for implementing LoginRegister component
  */
 
-class LoginRegister extends React.Component {
+
+export default class LoginRegister extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -19,10 +20,8 @@ class LoginRegister extends React.Component {
   }
 
 
-  // Contorl change of password
-  handleInputChange = ({ target }) => {
-    this.setState({ [target.name]: target.value });
-  };
+  // Handle change of login name and password
+  handleInputChange = ({ target }) => this.setState({ [target.name]: target.value });
 
 
   /**
@@ -46,12 +45,12 @@ class LoginRegister extends React.Component {
       .then(response => {   // Handle success
         console.log(`LoginRegister loggin Success!`); 
         this.isLogged = true;  
-        this.props.handler(response.data);  // for passing loggin user data and logged info back to TopBar
+        this.props.onLoginUserChange(response.data);  // for passing loggin user data and logged info back to TopBar
       })
       .catch(error => {     // Handle error
         console.log(`LoginRegister loggin Fail!`); 
         this.isLogged = false;     
-        this.props.handler(null);  // for passing loggin user's first name and logged info back to TopBar
+        this.props.onLoginUserChange(null);  // for passing loggin user's first name and logged info back to TopBar
         console.log(error);
       });
   };
@@ -59,14 +58,14 @@ class LoginRegister extends React.Component {
 
   render() {
 
-    // Within login page, if user is authorized, redirect to that user's detail page.
+    // Handle jumping into the login User's detail page if user is authorizedx
     const loginUser = this.props.loginUser;
     if (loginUser) {
       return <Redirect from="/login-register" to={`/users/${loginUser._id}`} />;
        // the state prop in <Redirect> is used to pass data between components when using client-side routing
     }
 
-    // else, just show login page:
+    // else, show login page:
     return (
       <Grid container direction="column" alignItems="center">
         {/* Welcome prompt */}
@@ -79,14 +78,14 @@ class LoginRegister extends React.Component {
           <form onSubmit={this.handleLoginSubmit}>
             <FormControl margin="normal" fullWidth>
               <InputLabel htmlFor="loginName">Login Name:</InputLabel>
-              <Input name="loginName" id="loginName" type="text" autoFocus value={this.state.loginName} onChange={this.handleInputChange}/>
+              <Input name="loginName" id="loginName" autoFocus value={this.state.loginName} onChange={this.handleInputChange}/>
             </FormControl>
             <FormControl margin="normal" fullWidth>
               <InputLabel htmlFor="password">Password:</InputLabel>
               <Input name="password" id="password" type="password" value={this.state.password} onChange={this.handleInputChange}/>
             </FormControl>
             <br/><br/>
-            <Button type="submit" fullWidth variant="contained" color="primary">Login</Button>
+            <Button type="submit" disabled={this.state.loginName.length === 0} fullWidth variant="contained" color="primary">Login</Button>
             { this.isLogged === false && <Typography style={{ color: "red" }}>Not a valid login name, try again</Typography> }
           </form>
         </Grid>
@@ -94,5 +93,3 @@ class LoginRegister extends React.Component {
     );
   }
 }
-
-export default LoginRegister;
