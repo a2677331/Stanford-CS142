@@ -3,6 +3,7 @@ import { Link, Redirect } from "react-router-dom";
 import { List, Divider, Typography, Grid, Avatar, Card, CardHeader, CardMedia, CardContent } from "@material-ui/core";
 import "./userPhotos.css";
 import axios from "axios";
+import CommentDialog from "../commentDialog/commentDialog";
 
 /**
  * * Jian Zhong
@@ -93,25 +94,33 @@ class UserPhotos extends React.Component {
                   </Typography>
                 )}
                 {/* Only when photo has comments, then display related comments */}
-                {photo.comments && photo.comments.map((c) => (
-                    <List key={c._id}>
-                      <Typography variant="subtitle2">
-                        <Link to={`/users/${c.user._id}`}>
-                          {`${c.user.first_name} ${c.user.last_name}`}
-                        </Link>
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="textSecondary"
-                        gutterBottom
-                      >
-                        {c.date_time}
-                      </Typography>
-                      <Typography variant="body1">
-                        {`"${c.comment}"`}
-                      </Typography>
-                    </List>
-                  ))}
+                {
+                  photo.comments.length === 0 ? 
+                    <CommentDialog />
+                  : 
+                    (
+                      photo.comments.map(c => (
+                        <List key={c._id}>
+                          <Typography variant="subtitle2">
+                            <Link to={`/users/${c.user._id}`}>
+                              {`${c.user.first_name} ${c.user.last_name}`}
+                            </Link>
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="textSecondary"
+                            gutterBottom
+                          >
+                            {c.date_time}
+                          </Typography>
+                          <Typography variant="body1">
+                            {`"${c.comment}"`}
+                          </Typography>
+                          <CommentDialog />
+                        </List>
+                      ))
+                    )
+                }
               </CardContent>
               
             </Card>
