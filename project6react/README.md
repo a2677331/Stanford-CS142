@@ -1,4 +1,4 @@
-## Install the MongoDB Community Edition
+## Install the MongoDB database
 ``brew tap mongodb/brew``<br />
 ``brew update``<br />
 ``brew install mongodb-community@6.0``<br />
