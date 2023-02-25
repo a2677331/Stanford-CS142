@@ -28,6 +28,10 @@
  *                      should have all the Comments on the Photo (JSON format)
  */
 
+// ExpressJS App
+var express = require('express');
+var app = express();   
+
 // Setup Mongoose database
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
@@ -38,12 +42,8 @@ var User = require('./schema/user.js');
 var Photo = require('./schema/photo.js');
 var SchemaInfo = require('./schema/schemaInfo.js');
 
-// ExpressJS App
-var express = require('express');
-var app = express();   
-
 // Connect to the MongoDB instance
-mongoose.connect('mongodb://localhost/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect('mongodb://127.0.0.1/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
 
 // We have the express static module (http://expressjs.com/en/starter/static-files.html) 
 // do all the work for us.
