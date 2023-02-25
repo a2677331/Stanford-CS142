@@ -1,7 +1,7 @@
 ## Install the MongoDB Community Edition
-``brew tap mongodb/brew``<br />
-``brew update``<br />
-``brew install mongodb-community@6.0``<br />
+``brew tap mongodb/brew`` \
+``brew update`` \
+``brew install mongodb-community@6.0`` \
 
 ## Store the MongoDB data's location to "<whoami>/mongodb"
 ``mongod --dbpath ~/mongodb``
