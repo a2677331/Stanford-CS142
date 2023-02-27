@@ -28,6 +28,8 @@
  *                      should have all the Comments on the Photo (JSON format)
  */
 
+var ObjectId = require('mongodb').ObjectId; 
+
 /**
  * Setup Mongoose database and connect:
  */
@@ -101,7 +103,7 @@ app.post('/admin/login', (request, response) => {
             } else {
             // Login name exists, reply with information for logged in user
                 const userObj = JSON.parse(JSON.stringify(user)); // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
-                request.session.userRecord = userObj._id;          // save login user id to session
+                request.session.userIdRecord = userObj._id;          // save login user id to session
                 response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
                 /**
                  * * Why can't send object below as a response?
@@ -123,7 +125,7 @@ app.post('/admin/login', (request, response) => {
  */
 app.post('/admin/logout', (request, response) => {
     // return status code 400 if user is currently not logged in
-    if (!request.session.userRecord) {
+    if (!request.session.userIdRecord) {
         response.status(400).send({error: "User is not logged in"});
         console.log("You already logged out, no need to do again.");
     } else {
@@ -154,7 +156,7 @@ app.post('/admin/logout', (request, response) => {
  * @param next 
  */
 function isAuthenticated(request, response, next) {
-    if (request.session.userRecord) {
+    if (request.session.userIdRecord) {
         console.log("Authenticattion Passes.");
         next();
     }
@@ -276,23 +278,6 @@ app.get('/user/list', isAuthenticated ,function (request, response) {
 
             // Send response to client
             response.json(newUsers);            
-
-            /**
-             * * async method with "async.each()"
-             */
-            // const newUserList = [];
-            // async.each(userList, (user, doneCallback) => {
-            //     const { first_name, last_name, _id } = user;
-            //     newUserList.push({ first_name, last_name, _id }); 
-            //     doneCallback(err);
-            //     console.log("From async: ", newUserList);
-            // }, error => {
-            //     if (error) {
-            //         console.log(error);
-            //     } else {
-            //         response.json(newUserList);
-            //     }
-            // });
         }
     });
 
@@ -335,12 +320,12 @@ app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
      */
     Photo.find({user_id: id}, (err, photos) => {
         if (err) {
-            console.log(`** Photos for user with id ${id}: Not Found! *`);
-            response.status(400).send(JSON.stringify(`** Photos for user with id ${id}: Not Found **`));
+            response.status(400).send(`** Photos for user with id ${id}: Not Found **`);
         } else {
             console.log(`** Read server path /photosOfUser/${id} Success! **`);
             let count = 0;                                        // count the number of processed photos 
             const photoList = JSON.parse(JSON.stringify(photos)); // get data from server and convert to JS data
+            // ! Why _id will change????????????????????????????????????????????????/
 
             // For each photo in photos list:
             photoList.forEach(photo => {
@@ -364,10 +349,9 @@ app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
                 }, error => {
                     count += 1;
                     if (error) {
-                        response.status(400).send(JSON.stringify(`** Photos for user with id ${id}: Not Found **`));
+                        response.status(400).send(`** Error occured in finding commments under a photo **`);
                     } else if (count === photoList.length) {
                         // Response to client only after aysnc.each() has processed all Photos in photoList.
-                        console.log("Done all  async() processing");
                         response.json(photoList);  // Response to client, finanly!
                     }
                 }); // end of "async.eachOf(photo.comments,)"
@@ -375,6 +359,41 @@ app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
 
         }
     });    
+});
+
+app.post('/commentsOfPhoto/:photo_id', isAuthenticated, (request, response) => {
+
+    const commentText = request.body.comment;    // comment object 
+    console.log("Send Comment to Path: /commentsOfPhoto/" + commentText);
+    if (Object.keys(commentText).length === 0) { // don't want empty comment
+        response.status(400).send("Status: 400, empty comment content not allowed.");
+        return;
+    }
+
+    const photoUserId = request.params.photo_id;     // photo id
+    const userId = request.session.userIdRecord; // logged user id is current session user id
+
+    // find the photo being commented: comment's photo_id and photo's _id is the same
+    Photo.findOne({_id: new ObjectId(photoUserId)})
+         .then(photo => {
+            if (!photo) {
+                response.status(400).send("Status: 400, Photo not found.");
+            } else {
+                // found photo with photoId value!
+                const commentObj = {
+                    comment: commentText, 
+                    date_time: new Date().toISOString(),
+                    user_id: userId
+                };
+                // add the new comment to photo's comment list and store it
+                if (!photo.comments) photo.comments = [commentObj];
+                else photo.comments.push(commentObj);
+                photo.save();
+                response.status(200).json(commentObj);
+            }
+         })
+         .catch(error => console.error('Error Finding Photo with Photo ID', error));
+
 });
 
 

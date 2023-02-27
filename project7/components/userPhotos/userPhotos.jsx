@@ -9,48 +9,57 @@ import CommentDialog from "../commentDialog/commentDialog";
  * * Jian Zhong
  * Define UserPhotos, a React componment of CS142 project #5
  */
-class UserPhotos extends React.Component {
+export default class UserPhotos extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      photos: null,
-      user: null
+      photos: null, // photos list where each photo contains comments list
+      user: null,   // Author who posts the photo
     };
   }
 
-  // load photos and user detail when load or refreash
+  /**
+   * user axios to get photos data and photo's Author data
+   * from user ID
+   *  */
+  axios_fetch_photos_and_user() {
+    // To get photo data
+    axios 
+    .get(`/photosOfUser/${this.props.match.params.userId}`) // photo url
+    .then(response => this.setState({ photos: response.data }))
+    .catch(error => console.log( "/photosOfUser/ Error: ", error));
+
+    // To get photo's Author data
+    axios
+      .get(`/user/${this.props.match.params.userId}`)  // user url
+      .then(response => { 
+        this.setState({ user: response.data });
+        this.props.onUserNameChange(response.data.first_name + ' ' + response.data.last_name);
+      })
+      .catch(error => console.log( "/user/ Error: ", error));
+  }
+
+
+  /**
+   * To re-fetch data from server once comment is submitted,
+   * this will lead to update UI immediately once comment sent.
+   */
+  handleSumbitChange = () => {
+    console.log("Submit was pressed, re-rendering photos and comments");
+    this.axios_fetch_photos_and_user();
+  };
+
+  /**
+   * To fetch photos and author data when click the "See Photo" button.
+   *  */ 
   componentDidMount() {
-    if (this.props.match.params.userId) { // when there is an id, then get author's photos
-      const url = `http://localhost:3000/photosOfUser/${this.props.match.params.userId}`; // photo url
-
-      axios // Use Axios to send request and set the version state variable.
-        .get(url)
-        .then(response => { // Handle success
-          console.log("** Succes: fetched data from " + url +" **");
-          this.setState({ photos: response.data });
-        })
-        .catch(error => {   // Handle error
-          console.log("** Error: **\n", error.message);
-        });
-    }
-
-    // Loads user url for being able to click the author name and enter his/her detail page.
-    if (this.props.match.params.userId) { // when there is an id, then get author's info
-      const url = `http://localhost:3000/user/${this.props.match.params.userId}`; // user url
-
-      axios // Use Axios to send request and set the version state variable.
-        .get(url)
-        .then(response => { // Handle success
-          console.log("** Succes: fetched data from " + url +" **");
-          this.setState({ user: response.data });
-          this.props.onUserNameChange(response.data.first_name + ' ' + response.data.last_name);
-        })
-        .catch(error => {   // Handle error
-          console.log("** Error: **\n", error.message);
-        });
+    // when there is an id after "/photos/<user_id>"
+    if (this.props.match.params.userId) { 
+      this.axios_fetch_photos_and_user();
     }
   }
 
+    
   render() {
     // redirect to login page if not logged in
     if (!this.props.loginUser) {
@@ -70,66 +79,70 @@ class UserPhotos extends React.Component {
     }
 
     // If there is user photo, then display user photos
-    return this.state.photos && (
-      <Grid justifyContent="center" container spacing={3} >
-        {this.state.photos.map((photo) => (
-          <Grid item xs={6} key={photo._id}>
-            <Card variant="outlined">
-              <CardHeader
-                title={linkToAuthor}
-                subheader={photo.date_time}
-                avatar={<Avatar style={{backgroundColor: '#FF7F50'}}>A</Avatar>}
-              />
-              <CardMedia
-                component="img"
-                image={`./images/${photo.file_name}`}
-                alt="Anthor Post"
-              />
+    return (
+      this.state.photos && (
+        <Grid justifyContent="center" container spacing={3}>
+          {/* Loop through all the photos */}
+          {this.state.photos.map((photo) => (
+            // Each photo's layout
+            <Grid item xs={6} key={photo._id}>
+              <Card variant="outlined">
+                {/* Each photo's author name and author post time */}
+                <CardHeader
+                  title={linkToAuthor}
+                  subheader={photo.date_time}
+                  avatar={
+                    <Avatar style={{ backgroundColor: "#FF7F50" }}>A</Avatar>
+                  }
+                />
 
-              <CardContent>
-                {photo.comments && (
-                  <Typography variant="subtitle1">
-                    Comments:
-                    <Divider />
-                  </Typography>
-                )}
-                {/* Only when photo has comments, then display related comments */}
-                {
-                  photo.comments.length === 0 ? 
-                    <CommentDialog />
-                  : 
-                    (
-                      photo.comments.map(c => (
-                        <List key={c._id}>
-                          <Typography variant="subtitle2">
-                            <Link to={`/users/${c.user._id}`}>
-                              {`${c.user.first_name} ${c.user.last_name}`}
-                            </Link>
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            color="textSecondary"
-                            gutterBottom
-                          >
-                            {c.date_time}
-                          </Typography>
-                          <Typography variant="body1">
-                            {`"${c.comment}"`}
-                          </Typography>
-                          <CommentDialog />
-                        </List>
-                      ))
-                    )
-                }
-              </CardContent>
-              
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                {/* Each photo's image */}
+                <CardMedia
+                  component="img"
+                  image={`./images/${photo.file_name}`}
+                  alt="Anthor Post"
+                />
+
+                {/* Comments' layout */}
+                <CardContent>
+                  {/* Loop through all comments under the photo */}
+                  {photo.comments && (
+                    <Typography variant="subtitle1">
+                      Comments:
+                      <Divider />
+                    </Typography>
+                  )}
+                  {photo.comments.map((c) => (
+                    <List key={c._id}>
+                      <Typography variant="subtitle2">
+                        <Link to={`/users/${c.user._id}`}>
+                          {`${c.user.first_name} ${c.user.last_name}`}
+                        </Link>
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="textSecondary"
+                        gutterBottom
+                      >
+                        {c.date_time}
+                      </Typography>
+                      <Typography variant="body1">
+                        {`"${c.comment}"`}
+                      </Typography>
+                    </List>
+                  ))}
+                  {/* Comment dialog box */}
+                  <CommentDialog
+                    handleSumbitChange={this.handleSumbitChange}
+                    photo_id={photo._id}
+                  />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )
     );
   }
 
 }
-
-export default UserPhotos;

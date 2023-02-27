@@ -55,10 +55,10 @@ Promise.all(removePromises).then(function () {
             // but we keep it distinct from the MongoDB ID so we can go to something
             // prettier in the future since these show up in URLs, etc.
             userObj.save();
-            mapFakeId2RealId[user._id] = userObj._id;
+            mapFakeId2RealId[user._id] = userObj._id; // ! mapFakeId2RealId [fake]: real
             user.objectID = userObj._id;
-            console.log('Adding user:', user.first_name + ' ' + user.last_name, ' with ID ',
-                user.objectID);
+            console.log('Adding user:');
+            console.log(user);
         }).catch(function (err){
             console.error('Error create user', err);
         });
@@ -94,7 +94,6 @@ Promise.all(removePromises).then(function () {
                     });
                 }
                 photoObj.save();
-                console.log('Adding photo:', photo.file_name, ' of user ID ', photoObj.user_id);
             }).catch(function (err){
                 console.error('Error create user', err);
             });

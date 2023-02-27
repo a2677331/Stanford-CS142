@@ -1,4 +1,4 @@
-import React, { StrictMode } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
 import { Grid, Typography, Paper } from '@material-ui/core';
@@ -116,5 +116,5 @@ class PhotoShare extends React.Component {
 } 
 
 // Create React App
-ReactDOM.render(<StrictMode><PhotoShare/></StrictMode>, 
+ReactDOM.render(<PhotoShare/>, 
 document.getElementById('photoshareapp'));

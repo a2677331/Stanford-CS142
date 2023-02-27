@@ -18,7 +18,7 @@ class UserDetail extends React.Component {
   }
 
   // Use Axios to send request and update the user state variable.
-  fetchData_axios(url) {
+  axios_fetchData(url) {
     axios
     .get(url)
     .then((response) => { // Handle success:
@@ -36,7 +36,7 @@ class UserDetail extends React.Component {
     // Make request to server only when there is id
     if (this.props.match.params.userId) {
       const url = `http://localhost:3000/user/${this.props.match.params.userId}`;
-      this.fetchData_axios(url);
+      this.axios_fetchData(url);
     }
   }
 
@@ -49,7 +49,7 @@ class UserDetail extends React.Component {
     const currUserID = this.props.match.params.userId;
     if (prevUserID !== currUserID && currUserID) {
       const url = `http://localhost:3000/user/${currUserID}`;
-      this.fetchData_axios(url);
+      this.axios_fetchData(url);
     }
   }
 
