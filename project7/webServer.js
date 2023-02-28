@@ -42,8 +42,9 @@ mongoose.connect('mongodb://127.0.0.1/cs142project6', { useNewUrlParser: true, u
  *  */ 
 const session = require('express-session'); // for handling session management
 const bodyParser = require('body-parser');  // for parsing the JSON encoded POST request bodies
-// const multer = require('multer');           // for handling uploading files.
+const multer = require('multer');           // for handling uploading photos
 var MongoStore = require('connect-mongo')(session);
+const fs = require("fs"); // for writing files into the filesystem
 
 
 /**
@@ -52,6 +53,7 @@ var MongoStore = require('connect-mongo')(session);
 var express = require('express');
 var app = express();   
 var async = require('async'); // to use async.each()
+const { is } = require('bluebird');
 
 
 // Load the Mongoose schema for User, Photo, and SchemaInfo
@@ -62,12 +64,12 @@ var SchemaInfo = require('./schema/schemaInfo.js');
 
 // We have the express static module (http://expressjs.com/en/starter/static-files.html) 
 // do all the work for us.
-app.use(express.static(__dirname));
 /**
  * The __dirname is a global variable that represents the directory name of the current module.
  * So, when a client makes a request for a file, the Express application will check the current 
  * directory for the file and return it to the client if it exists. 
  */
+app.use(express.static(__dirname));
 
 
 /**
@@ -82,69 +84,10 @@ app.use(session({
     store: new MongoStore({ mongooseConnection: mongoose.connection })
 })); 
 
-app.use(bodyParser.json());  // parse application/json
-
-
 /**
- * * Jian Zhong: Project 7, API for loggging in a user
- * Provides a way for the photo app's LoginRegister view to login in a user
- */
-app.post('/admin/login', (request, response) => {
-    /**
-     * See if the request's loginName matches database
-     * if match, send back greeting to client
-     * if not match, send 400 status code(Bad Request).
-     */
-    User.findOne({ login_name: request.body.login_name })
-        .then(user => {
-            // Login name NOT exists, response status 400 and info "Login name is not a valid account"
-            if (!user) {
-                response.status(400).send("Status: 400, Login name is NOT found.");
-            } else {
-            // Login name exists, reply with information for logged in user
-                const userObj = JSON.parse(JSON.stringify(user)); // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
-                request.session.userIdRecord = userObj._id;          // save login user id to session
-                response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
-                /**
-                 * * Why can't send object below as a response?
-                 * * { first_name: user.first_name, lastName: user.last_name }
-                 * * Answer: you didn't user "JSON.parse(JSON.stringify(user))" to convert data before sending out.
-                 */
-            }
-        })
-        .catch(error => {
-            console.error(`** Error occured: ${error}. **`);
-        });
-});
-
-
-/**
- * * Jian Zhong: Project 7, API for logging out in a user
- * A POST request with an empty body to this URL will logout the user by clearing the information stored in the session. 
- * An HTTP status of 400 (Bad request) should be returned in the user is not currently logged in
- */
-app.post('/admin/logout', (request, response) => {
-    // return status code 400 if user is currently not logged in
-    if (!request.session.userIdRecord) {
-        response.status(400).send({error: "User is not logged in"});
-        console.log("You already logged out, no need to do again.");
-    } else {
-        // clear the information stored in the session
-        request.session.destroy(err => {
-
-        // return status code 400 if error occurs during destroying session
-        if (err) {
-            response.sendStatus(400);
-            console.log("Error in destroying the session");
-        }
-        else {
-            // Delete session successfully, send 200 code!
-            response.sendStatus(200);
-            console.log("OK");
-        }
-     });
-    }
-});
+ * Middleware to parse application/json
+ *  */ 
+app.use(bodyParser.json());  
 
 
 /**
@@ -166,6 +109,152 @@ function isAuthenticated(request, response, next) {
         // ! You forgot to send the status, .json() or .send() neeed.
     }
 }
+
+
+/**
+ * * Jian Zhong: Project 7, problem 3's endpoint 
+ * Handle photo uploading:
+ * const upload = multer({ storage: multer.memoryStorage() }); // to handle multipart/form-data
+ * const processFormBody = upload.single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
+ */
+const upload = multer({ storage: multer.memoryStorage() }); // to handle multipart/form-data
+const processFormBody = upload.single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
+
+app.post('/photo/new', isAuthenticated, (request, response) => {
+    processFormBody(request, response, err => {
+        // check error request:
+        if (err || !request.file) {
+            console.log("Error in processing photo received from request", err);
+            return;
+        }
+
+        // Check if uploaded photo is empty
+        if (request.file.buffer.size === 0) {
+            request.status(400).json({ message: 'Uploaded photo is empty' });
+            return;
+        }        
+
+        console.log("A photo received successfully: ");
+        console.log(request.file); // the photo file
+        console.log("Text file of the photo(if any): ");
+        console.log(request.body); // text file of the photo, if any
+
+        // create the file in the directory "images" under an unique name, 
+        // make the original file name unique by adding a unique prefix with a timestamp,
+        // then have the photo data written into the images directory
+        const timestamp = new Date().valueOf();
+        const filename = 'U' +  String(timestamp) + request.file.originalname;
+        fs.writeFile("./images/" + filename, request.file.buffer, function (error) {
+            if (error)  console.log("Error during photo data writting into the images directory: ", error);
+            else console.log("** Server: file saved in the directory **");
+        });
+
+        // under the name filename, store the new Photo object in the database
+        Photo.create({
+            file_name: filename,
+            date_time: timestamp,
+            user_id: request.session.userIdRecord
+        }).then(photoObj =>{
+            console.log(`** Server: photo saved in the DB **`);
+            console.log(photoObj);
+        }).catch(e => {
+            console.log("Error during photo saving into the DB: ", e);
+        });
+    });
+});
+
+
+/**
+ * * Jian Zhong: Project 7, problem 2's endpoint 
+ * Handle new comment:
+ * store the new comment in the database
+ */
+app.post('/commentsOfPhoto/:photo_id', isAuthenticated, (request, response) => {
+    // don't want empty comment
+    const commentText = request.body.comment;    // new comment 
+    if (Object.keys(commentText).length === 0) { 
+        response.status(400).json({ message: "Status 400: empty comment is not allowed" });
+        return;
+    }
+
+    // find the photo being commented: comment's photo_id and photo's _id is the same
+    Photo.findOne({_id: new ObjectId(request.params.photo_id)})
+         .then(photo => {
+            if (!photo) {
+                response.status(400).json({ message: "Status: 400, Photo not found" });
+            } else {
+                // found photo with photoId value!
+                const commentObj = {
+                    comment: commentText, 
+                    date_time: new Date().toISOString(),
+                    user_id: request.session.userIdRecord // logged user id is the session user id
+                };
+                // add the new comment to photo's comment list and store it
+                if (!photo.comments) photo.comments = [commentObj];
+                else photo.comments.push(commentObj);
+                photo.save();
+                console.log("** Server: comment added to photo! **");
+                response.status(200).send();
+            }
+         })
+         .catch(error => console.error('Error Finding Photo with Photo ID', error));
+});
+
+/**
+ * * Jian Zhong: Project 7, API for loggging in a user
+ * Provides a way for the photo app's LoginRegister view to login in a user
+ */
+app.post('/admin/login', (request, response) => {
+    /**
+     * See if the request's loginName matches database
+     * if match, send back greeting to client
+     * if not match, send 400 status code(Bad Request).
+     */
+    User.findOne({ login_name: request.body.login_name })
+        .then(user => {
+            // Login name NOT exists, response status 400 and info "Login name is not a valid account"
+            if (!user) {
+                response.status(400).json({ message: "Status: 400, Login name is NOT found" });
+            } else {
+            // Login name exists, reply with information for logged in user
+                console.log("** Server: User loggin Success! **");
+                const userObj = JSON.parse(JSON.stringify(user));  // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
+                request.session.userIdRecord = userObj._id;        // save login user id to session to have browser remember the current user
+                response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
+            }
+        })
+        .catch(error => {
+            console.error(`** Error occured: ${error}. **`);
+        });
+});
+
+
+/**
+ * * Jian Zhong: Project 7, API for logging out in a user
+ * A POST request with an empty body to this URL will logout the user by clearing the information stored in the session. 
+ * An HTTP status of 400 (Bad request) should be returned in the user is not currently logged in
+ */
+app.post('/admin/logout', (request, response) => {
+    // return status code 400 if user is currently not logged in
+    if (!request.session.userIdRecord) {
+        response.status(400).json({ message: "User is not logged in" });
+        console.log("You already logged out, no need to do again.");
+    } else {
+        // clear the information stored in the session
+        request.session.destroy(err => {
+            // return status code 400 if error occurs during destroying session
+            if (err) {
+                response.sendStatus(400);
+                console.log("Error in destroying the session");
+            }
+            else {
+                // Delete session successfully, send 200 code!
+                response.sendStatus(200);
+                console.log("OK");
+            }
+        });
+    }
+});
 
 
 app.get('/', isAuthenticated, function (request, response) {
@@ -244,15 +333,11 @@ app.get('/test/:p1', isAuthenticated, function (request, response) {
 /*
  * Jian Zhong
  * URL /user/list - Return all the User object.
- */
-
-/**
- * ! solved wating for /user/list response forever:
- * ! because of isAuthenticated() middleware,
- * ! requst to this path will hang forever.
+ * * solved wating for /user/list response forever:
+ * * because of isAuthenticated() middleware,
+ * * requst to this path will hang forever.
  */
 app.get('/user/list', isAuthenticated ,function (request, response) {
-
     User.find({}, function(err, users) {
         // Error handling
         if (err) {
@@ -263,7 +348,7 @@ app.get('/user/list', isAuthenticated ,function (request, response) {
              * "user" returned from Mongoose is Array type: Array of user objects.
              * also need to be processed as Mongoose models and models from frontend do not allign perpectly.
              */
-            console.log("** Read server path /user/list Success! **");
+            console.log("** Server: found all users Success! **");
             const userList = JSON.parse(JSON.stringify(users));    // convert Mongoose data to Javascript obj
             
             /**
@@ -280,7 +365,6 @@ app.get('/user/list', isAuthenticated ,function (request, response) {
             response.json(newUsers);            
         }
     });
-
 });
 
 
@@ -297,10 +381,10 @@ app.get('/user/:id', isAuthenticated, function (request, response) {
     User.findOne({_id: id}, function(err, user) {
         if (err) {          // data not found
             console.log(`** User ${id}: Not Found! **`);
-            response.status(400).send(JSON.stringify(err));
+            response.status(400).json({ message: err.message });
         } else {            // found data!
             const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
-            console.log(`** Read server path /user/${id} Success! **`);
+            console.log(`** Server: found /user/${id} Success! **`);
             delete userObj.__v;                               // remove unnecessary property
             response.status(200).json(userObj);
         }
@@ -320,9 +404,9 @@ app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
      */
     Photo.find({user_id: id}, (err, photos) => {
         if (err) {
-            response.status(400).send(`** Photos for user with id ${id}: Not Found **`);
+            response.status(400).json({ message: `Photos for user with id ${id}: Not Found` });
         } else {
-            console.log(`** Read server path /photosOfUser/${id} Success! **`);
+            console.log(`** Server: fuond /photosOfUser/${id} Success! **`);
             let count = 0;                                        // count the number of processed photos 
             const photoList = JSON.parse(JSON.stringify(photos)); // get data from server and convert to JS data
             // ! Why _id will change????????????????????????????????????????????????/
@@ -349,7 +433,7 @@ app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
                 }, error => {
                     count += 1;
                     if (error) {
-                        response.status(400).send(`** Error occured in finding commments under a photo **`);
+                        response.status(400).json({ message: "Error occured in finding commments under a photo" });
                     } else if (count === photoList.length) {
                         // Response to client only after aysnc.each() has processed all Photos in photoList.
                         response.json(photoList);  // Response to client, finanly!
@@ -359,41 +443,6 @@ app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
 
         }
     });    
-});
-
-app.post('/commentsOfPhoto/:photo_id', isAuthenticated, (request, response) => {
-
-    const commentText = request.body.comment;    // comment object 
-    console.log("Send Comment to Path: /commentsOfPhoto/" + commentText);
-    if (Object.keys(commentText).length === 0) { // don't want empty comment
-        response.status(400).send("Status: 400, empty comment content not allowed.");
-        return;
-    }
-
-    const photoUserId = request.params.photo_id;     // photo id
-    const userId = request.session.userIdRecord; // logged user id is current session user id
-
-    // find the photo being commented: comment's photo_id and photo's _id is the same
-    Photo.findOne({_id: new ObjectId(photoUserId)})
-         .then(photo => {
-            if (!photo) {
-                response.status(400).send("Status: 400, Photo not found.");
-            } else {
-                // found photo with photoId value!
-                const commentObj = {
-                    comment: commentText, 
-                    date_time: new Date().toISOString(),
-                    user_id: userId
-                };
-                // add the new comment to photo's comment list and store it
-                if (!photo.comments) photo.comments = [commentObj];
-                else photo.comments.push(commentObj);
-                photo.save();
-                response.status(200).json(commentObj);
-            }
-         })
-         .catch(error => console.error('Error Finding Photo with Photo ID', error));
-
 });
 
 
