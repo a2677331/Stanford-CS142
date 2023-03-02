@@ -44,7 +44,7 @@ export default class UserPhotos extends React.Component {
    * To re-fetch data from server once comment is submitted,
    * this will lead to update UI immediately once comment sent.
    */
-  handleSumbitChange = () => {
+  handleCommentSumbit = () => {
     console.log("Submit was pressed, re-rendering photos and comments");
     this.axios_fetch_photos_and_user();
   };
@@ -59,41 +59,52 @@ export default class UserPhotos extends React.Component {
     }
   }
 
+  /**
+   * To detect if a new photo is added, re-render if it was.
+   * @param this.props.photoIsUploaded: if a new photo was updated
+   */
+  componentDidUpdate(prevProps) {
+    if (prevProps.photoIsUploaded!==this.props.photoIsUploaded && this.props.photoIsUploaded) {
+        console.log("Trigger re-render");
+        this.axios_fetch_photos_and_user();
+      }
+  }
+
     
   render() {
-    // redirect to login page if not logged in
+    // If not yet login, redirect to login page
     if (!this.props.loginUser) {
       return <Redirect to={`/login-register`} />;
     }
 
-    // If there is user, then render below component to link to user detail page
-    let linkToAuthor; // Link component to Author
-    if (this.state.user) {
-      linkToAuthor = (
-        <Link to={`/users/${this.state.user._id}`}>
-          {`${this.state.user.first_name} ${this.state.user.last_name}`}
-        </Link>
-      );
-    } else {
-      linkToAuthor = <p>Loading...</p>;
+    // If there is no user, then render below:
+    if (!this.state.user) {
+      return <p>Loading</p>;
     }
 
     // If there is user photo, then display user photos
     return (
       this.state.photos && (
-        <Grid justifyContent="center" container spacing={3}>
+        <Grid justifyContent="flex-start" container spacing={3}>
           {/* Loop through all the photos */}
           {this.state.photos.map((photo) => (
+
             // Each photo's layout
             <Grid item xs={6} key={photo._id}>
               <Card variant="outlined">
                 {/* Each photo's author name and author post time */}
                 <CardHeader
-                  title={linkToAuthor}
+                  avatar={(
+                    <Avatar style={{ backgroundColor: "#FF7F50" }}>
+                      {this.state.user.first_name[0]}
+                    </Avatar>
+                  )}                
+                  title={(
+                    <Link to={`/users/${this.state.user._id}`}>
+                      {`${this.state.user.first_name} ${this.state.user.last_name}`}
+                    </Link>
+                  )}
                   subheader={photo.date_time}
-                  avatar={
-                    <Avatar style={{ backgroundColor: "#FF7F50" }}>A</Avatar>
-                  }
                 />
 
                 {/* Each photo's image */}
@@ -131,12 +142,14 @@ export default class UserPhotos extends React.Component {
                       </Typography>
                     </List>
                   ))}
+
                   {/* Comment dialog box */}
                   <CommentDialog
-                    handleSumbitChange={this.handleSumbitChange}
+                    onCommentSumbit={this.handleCommentSumbit}
                     photo_id={photo._id}
                   />
                 </CardContent>
+
               </Card>
             </Grid>
           ))}

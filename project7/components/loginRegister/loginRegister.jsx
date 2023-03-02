@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Redirect } from 'react-router-dom';
 import axios from "axios";
-import { Typography, Grid, FormControl, InputLabel, Input, Button } from "@material-ui/core";
+import { Typography, Grid, FormControl, InputLabel, Input, Button, FormHelperText } from "@material-ui/core";
 
 /**
  * * Jian Zhong
@@ -78,11 +78,11 @@ export default class LoginRegister extends React.Component {
           <form onSubmit={this.handleLoginSubmit}>
             <FormControl margin="normal" fullWidth>
               <InputLabel htmlFor="loginName">Login Name:</InputLabel>
-              <Input name="loginName" id="loginName" autoFocus value={this.state.loginName} onChange={this.handleInputChange}/>
+              <Input name="loginName" id="loginName" autoFocus autoComplete="on" value={this.state.loginName} onChange={this.handleInputChange}/>
             </FormControl>
             <FormControl margin="normal" fullWidth>
               <InputLabel htmlFor="password">Password:</InputLabel>
-              <Input name="password" id="password" type="password" value={this.state.password} onChange={this.handleInputChange}/>
+              <Input name="password" id="password" type="password" autoComplete="on" value={this.state.password} onChange={this.handleInputChange}/>
             </FormControl>
             <br/><br/>
             <Button type="submit" disabled={this.state.loginName.length === 0} fullWidth variant="contained" color="primary">Login</Button>

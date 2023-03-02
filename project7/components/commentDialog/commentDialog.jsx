@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Dialog, DialogContent, DialogContentText, TextField, DialogActions } from "@material-ui/core";
+import { Button, Dialog, DialogContent, DialogContentText, TextField, DialogActions, Chip } from "@material-ui/core";
 import "./commentDialog.css";
 import axios from "axios";
 
@@ -34,22 +34,19 @@ export default class CommentDialog extends React.Component {
 
       // Send to POST request with comment text in JSON format
       axios
-        .post(`/commentsOfPhoto/${this.props.photo_id}`, { comment: commentText })
-        .then(response => {
-          console.log("Comment Sent Success: ", response.data);
-          this.props.handleSumbitChange();
-        })
+        .post(`/commentsOfPhoto/${this.props.photo_id}`, { comment: commentText }) // send new comment to server
+        .then(() => this.props.onCommentSumbit())                 // notify upper level component to re-render UI
         .catch(error => console.log("Comment Sent Failure: ", error));
     };
   
     render() {
       return (
         <div className="comment-dialog">
-          <Button variant="outlined" color="primary" size="small" onClick={this.handleClickOpen}>Reply</Button>
+          <Chip label="Reply" onClick={this.handleClickOpen}/>
           {/* onClose: when mouse click outside of the dialog box, then close the dialog */}
           <Dialog open={this.state.open} onClose={this.handleClickClose} >
             <DialogContent>
-              <DialogContentText>Add a comment</DialogContentText>
+              <DialogContentText>Add a comment...</DialogContentText>
               <TextField value={this.state.comment} onChange={this.handleCommentChange} autoFocus multiline margin="dense" fullWidth />
             </DialogContent>
             <DialogActions>

@@ -122,7 +122,7 @@ const processFormBody = upload.single('uploadedphoto');     // accept a single f
 
 app.post('/photo/new', isAuthenticated, (request, response) => {
     processFormBody(request, response, err => {
-        // check error request:
+        // Check error request:
         if (err || !request.file) {
             console.log("Error in processing photo received from request", err);
             return;
@@ -130,36 +130,30 @@ app.post('/photo/new', isAuthenticated, (request, response) => {
 
         // Check if uploaded photo is empty
         if (request.file.buffer.size === 0) {
-            request.status(400).json({ message: 'Uploaded photo is empty' });
+            request.status(400).json({ message: 'Error: Uploaded photo is empty' });
             return;
         }        
 
-        console.log("A photo received successfully: ");
-        console.log(request.file); // the photo file
-        console.log("Text file of the photo(if any): ");
-        console.log(request.body); // text file of the photo, if any
-
-        // create the file in the directory "images" under an unique name, 
+        // Create the file in the directory "images" under an unique name, 
         // make the original file name unique by adding a unique prefix with a timestamp,
         // then have the photo data written into the images directory
         const timestamp = new Date().valueOf();
         const filename = 'U' +  String(timestamp) + request.file.originalname;
-        fs.writeFile("./images/" + filename, request.file.buffer, function (error) {
+        fs.writeFile(`./images/${filename}`, request.file.buffer, function (error) {
             if (error)  console.log("Error during photo data writting into the images directory: ", error);
-            else console.log("** Server: file saved in the directory **");
+            else console.log("** Server: photo saved in the directory **");
         });
 
-        // under the name filename, store the new Photo object in the database
+        // Under the name filename, store the new Photo object in the database
         Photo.create({
             file_name: filename,
             date_time: timestamp,
             user_id: request.session.userIdRecord
-        }).then(photoObj =>{
-            console.log(`** Server: photo saved in the DB **`);
-            console.log(photoObj);
-        }).catch(e => {
-            console.log("Error during photo saving into the DB: ", e);
-        });
+        })
+        .then(() => console.log(`** Server: photo saved in the DB **`))
+        .catch(e =>  console.log(`** Error during photo saving into the DB: ${e} **`));
+       
+        response.status(200).send();  // must send back succeed response
     });
 });
 
@@ -181,9 +175,10 @@ app.post('/commentsOfPhoto/:photo_id', isAuthenticated, (request, response) => {
     Photo.findOne({_id: new ObjectId(request.params.photo_id)})
          .then(photo => {
             if (!photo) {
+                // handle not found
                 response.status(400).json({ message: "Status: 400, Photo not found" });
             } else {
-                // found photo with photoId value!
+                // handle found photo
                 const commentObj = {
                     comment: commentText, 
                     date_time: new Date().toISOString(),
@@ -194,7 +189,7 @@ app.post('/commentsOfPhoto/:photo_id', isAuthenticated, (request, response) => {
                 else photo.comments.push(commentObj);
                 photo.save();
                 console.log("** Server: comment added to photo! **");
-                response.status(200).send();
+                response.status(200).send(); // send back succeed response
             }
          })
          .catch(error => console.error('Error Finding Photo with Photo ID', error));
@@ -216,16 +211,14 @@ app.post('/admin/login', (request, response) => {
             if (!user) {
                 response.status(400).json({ message: "Status: 400, Login name is NOT found" });
             } else {
-            // Login name exists, reply with information for logged in user
+            // Login name found, reply with information for logged in user
                 console.log("** Server: User loggin Success! **");
                 const userObj = JSON.parse(JSON.stringify(user));  // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
                 request.session.userIdRecord = userObj._id;        // save login user id to session to have browser remember the current user
                 response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
             }
         })
-        .catch(error => {
-            console.error(`** Error occured: ${error}. **`);
-        });
+        .catch(error => console.error( `** Error occured: ${error}. **` ));
 });
 
 
@@ -293,7 +286,7 @@ app.get('/test/:p1', isAuthenticated, function (request, response) {
             }
 
             // We got the object - return it in JSON format.
-            console.log('SchemaInfo', info[0]);
+            // console.log('SchemaInfo', info[0]);
             response.end(JSON.stringify(info[0]));
         });
     } else if (param === 'counts') {
@@ -373,22 +366,27 @@ app.get('/user/list', isAuthenticated ,function (request, response) {
  * URL /user/:id - Return the information for User (id)
  */
 app.get('/user/:id', isAuthenticated, function (request, response) {
-    const id = request.params.id;
-
     /**
      * Finding a single user from user's ID
      */
-    User.findOne({_id: id}, function(err, user) {
-        if (err) {          // data not found
+    const id = request.params.id;
+    User.findOne({_id: id})
+        .then(user => {
+            if (!user) {
+                // handle not found
+                console.log(`** User ${id}: Not Found! **`);
+            } else {
+                // handle found
+                const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
+                console.log(`** Server: found /user/${id} Success! **`);
+                delete userObj.__v;                               // remove unnecessary property
+                response.status(200).json(userObj);
+            }
+        })
+        .catch(error => {
             console.log(`** User ${id}: Not Found! **`);
-            response.status(400).json({ message: err.message });
-        } else {            // found data!
-            const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
-            console.log(`** Server: found /user/${id} Success! **`);
-            delete userObj.__v;                               // remove unnecessary property
-            response.status(200).json(userObj);
-        }
-    });
+            response.status(400).json({ message: error.message });
+        });
 });
 
 
@@ -415,9 +413,9 @@ app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
             photoList.forEach(photo => {
                 delete photo.__v;  // remove the unnessary property before sending to client.
 
-                // For each comment in comments list: 
                 /**
                  * * To fecth multiple modules, need to use async.each().
+                 * For each comment in comments list: 
                  */
                 async.eachOf(photo.comments, (comment, index, callback) => {
                     // Use comment's user_id to get user object and update comment's user property.

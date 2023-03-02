@@ -17,6 +17,7 @@ class PhotoShare extends React.Component {
     this.state = {
       userName: null,            // which user the login user is viewing
       loginUser: null,           
+      photoIsUploaded: false
       /**
        * * login user's first name and id
        * * fetched from loginRegister component and pass up to the whole App
@@ -30,86 +31,114 @@ class PhotoShare extends React.Component {
    * @param userName user last name and first name
    */
   handleUserNameChange = userName => this.setState({ userName: userName });
-  
+
   /**
    * To get login user name from child component and return back for TopBar to display
    * @param loginUser user's id and first name
    */
   handleLoginUserChange = loginUser => this.setState({ loginUser: loginUser });
 
+  /**
+   * To let child component be notified photos list is updated
+   */
+  handlePhotoUpload = () => {
+    this.setState({ photoIsUploaded: true });  // notify photos list re-render
+    this.setState({ photoIsUploaded: false }); // reset the photoIsUploaded variable
+  };
 
   render() {
-    const paths = ["/users/:userId", "/photos/:userId", ""]; // paths to render Topbar
+    const paths = ["/users/:userId", "/photos/:userId", ""]; // paths to render in the Topbar
 
     return (
       <HashRouter>
-      <div>
-      <Grid container spacing={1}>
-
-        {/* TopBar View */}
-        <Grid item xs={12}>
-          <Switch>
-            {/* Use paths.map() to populate the same Topbar component for different routes */}
-            { 
-              paths.map(path => (
-                <Route key={path} path={path}>
-                  {props => <TopBar {...props} onLoginUserChange={this.handleLoginUserChange} userName={this.state.userName} loginUser={this.state.loginUser}/>}
-                </Route>
-              ))
-            }
-          </Switch>
-        </Grid>
-
-        <div className="cs142-main-topbar-buffer"/>
-        
-        {/* Sidebar View */}
-        <Grid item sm={3}>
-        <Paper className="side-bar" elevation={3}>
-          <UserList loginUser={this.state.loginUser}/>
-        </Paper>
-        </Grid>
-        
-        {/* Main View */}
-        <Grid item sm={9}>
-          <Paper className="cs142-main-grid-item" elevation={3}>
-            {/* ALl unauthorized visit would go to login page */}
+        <div>
+          <Grid container spacing={1}>
+            {/* TopBar View */}
+            <Grid item xs={12}>
               <Switch>
-                {/* Login/Register View */}
-                <Route path="/login-register">
-                  <LoginRegister onLoginUserChange={this.handleLoginUserChange} loginUser={this.state.loginUser}  />
-                </Route>
-                {/* User detail View */}
-                <Route path="/users/:userId">
-                  { props => <UserDetail {...props} onUserNameChange={this.handleUserNameChange} loginUser={this.state.loginUser}/> }
-                  {/* Pass "props": to use "this.props.match.params" */}
-                </Route>   
-                {/* User photo View */}
-                <Route path="/photos/:userId">
-                  { props => <UserPhotos {...props} onUserNameChange={this.handleUserNameChange} loginUser={this.state.loginUser}/> }
-                </Route>   
-                {/* User list View */}
-                <Route path="/users">
-                  {
-                    this.state.loginUser ?
-                      <UserList loginUser={this.state.loginUser}/>
-                    :
+                {/* Use paths.map() to populate the same Topbar component for different routes */}
+                {paths.map((path) => (
+                  <Route key={path} path={path}>
+                    {(props) => (
+                      <TopBar
+                        {...props}
+                        onLoginUserChange={this.handleLoginUserChange}
+                        onPhotoUpload={this.handlePhotoUpload}
+                        userName={this.state.userName}
+                        loginUser={this.state.loginUser}
+                      />
+                    )}
+                  </Route>
+                ))}
+              </Switch>
+            </Grid>
+
+            <div className="cs142-main-topbar-buffer" />
+
+            {/* Sidebar View */}
+            <Grid item sm={3}>
+              <Paper className="side-bar" elevation={3}>
+                <UserList loginUser={this.state.loginUser} />
+              </Paper>
+            </Grid>
+
+            {/* Main View */}
+            <Grid item sm={9}>
+              <Paper className="cs142-main-grid-item" elevation={3}>
+                {/* ALl unauthorized visit would go to login page */}
+                <Switch>
+                  {/* Login/Register View */}
+                  <Route path="/login-register">
+                    <LoginRegister
+                      onLoginUserChange={this.handleLoginUserChange}
+                      loginUser={this.state.loginUser}
+                    />
+                  </Route>
+                  {/* User detail View */}
+                  <Route path="/users/:userId">
+                    {(props) => (
+                      <UserDetail
+                        {...props}
+                        onUserNameChange={this.handleUserNameChange}
+                        loginUser={this.state.loginUser}
+                      />
+                    )}
+                    {/* Pass "props": to use "this.props.match.params" */}
+                  </Route>
+                  {/* User photo View */}
+                  <Route path="/photos/:userId">
+                    {(props) => (
+                      <UserPhotos
+                        {...props}
+                        onUserNameChange={this.handleUserNameChange}
+                        photoIsUploaded={this.state.photoIsUploaded}
+                        loginUser={this.state.loginUser}
+                      />
+                    )}
+                  </Route>
+                  {/* User list View */}
+                  <Route path="/users">
+                    {this.state.loginUser ? (
+                      <UserList loginUser={this.state.loginUser} />
+                    ) : (
                       <Redirect to={`/login-register`} />
-                  }
-                </Route>     
-                {/* Home page View */}
-                <Route path="/">
-                  {
-                    this.props.loginUser ?
-                      <Typography variant="h3">Welcome to my photosharing app!</Typography>
-                    :
+                    )}
+                  </Route>
+                  {/* Home page View */}
+                  <Route path="/">
+                    {this.props.loginUser ? (
+                      <Typography variant="h3">
+                        Welcome to my photosharing app!
+                      </Typography>
+                    ) : (
                       <Redirect to={`/login-register`} />
-                  }
-                </Route>
-              </Switch>                                                 
-          </Paper>
-        </Grid>   
-      </Grid>
-      </div>
+                    )}
+                  </Route>
+                </Switch>
+              </Paper>
+            </Grid>
+          </Grid>
+        </div>
       </HashRouter>
     ); // end of return
   } // end of render
