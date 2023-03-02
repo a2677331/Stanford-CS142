@@ -1,5 +1,6 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Input, InputLabel, FormControl } from '@material-ui/core';
+import { AppBar, Toolbar, Typography, Button } from '@material-ui/core';
+import { PhotoCamera } from '@material-ui/icons';
 import './TopBar.css';
 import axios from "axios";
 
@@ -110,7 +111,7 @@ class TopBar extends React.Component {
           {this.props.loginUser && (
             <form onSubmit={this.handlePhotoSubmit} style={{ flexGrow: 1 }}>
               <Button component="label" style={{ color: "white" }} >
-                Select a Photo
+                <PhotoCamera/>
                 <input hidden type="file" accept="image/*" ref={domFileRef => { this.uploadInput = domFileRef; }}/>
               </Button>
               <Button type="submit" variant="contained">Upload</Button>

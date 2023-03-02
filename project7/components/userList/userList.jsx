@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { List, ListItem, ListItemText } from "@material-ui/core";
+import { List, ListItem, ListItemText, Typography } from "@material-ui/core";
 import "./userList.css";
 import axios from "axios";
 
@@ -80,16 +80,18 @@ class UserList extends React.Component {
 
     // The user list only display if the current user is logged in
     if (this.state.users && this.props.loginUser) {
-      userList = this.state.users.map(user => (
+      userList = this.state.users.map((user) => (
         <ListItem
           to={`/users/${user._id}`}
           component={Link}
           key={user._id}
-          divider
           button
         >
-          {/* Link's to must be direct link address */}
-          <ListItemText primary={user.first_name + " " + user.last_name} />
+          {/* Link's "to" attribute must be direct link address */}
+          <ListItemText
+            style={{ paddingLeft: "8px" }}
+            primary={<Typography variant="h5">{`${user.first_name} ${user.last_name}`} </Typography>}
+          />
         </ListItem>
       ));
     }
