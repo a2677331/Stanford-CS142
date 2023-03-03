@@ -110,9 +110,41 @@ function hasSessionRecord(request, response, next) {
     }
 }
 
+/**
+ * * Jian Zhong: Project 7, problem 4's endpoint 
+ * To deal with new user creation
+ */
+app.post('/user', (request, response) => {
+    console.log("Server's request body");
+    console.log(request.body);
+    const newUser = request.body;
 
-app.post('/user', hasSessionRecord, (request, response) => {
-    response.status(200).json({ message: 'Server: Register OK'});
+    // Check: the first_name, last_name, and password must be non-empty strings
+    if (!(newUser.first_name && newUser.last_name &&  newUser.password)) {
+        response.status(400).json({ message: "The first_name, last_name, and password must be non-empty strings" });
+        return;
+    }
+
+    // only create a new user if it have not existed
+    User.findOne({ login_name: newUser.login_name })
+        .then(user => {
+            if (!user) { // user not exists yet
+                console.log("User not found");
+                // create the user in the DB
+                User.create(newUser)
+                    .then(() => console.log("New User created in the DB"))
+                    .catch(e => console.log("Error creating new user ", e));
+                response.status(200).json({ message: "User created successfully!" });
+            } else { // user exists already
+                console.log("User already exists!");
+                console.log(user);
+                response.status(400).json({ message: "The login name already exists, please choose a different login name"});
+            }
+        })
+        .catch(error => {
+            console.log("Error: user found user error", error);
+            response.status(400).json({ message: "Other error occured: " });
+        });
 });
 
 /**
@@ -124,7 +156,7 @@ app.post('/user', hasSessionRecord, (request, response) => {
 const upload = multer({ storage: multer.memoryStorage() }); // to handle multipart/form-data
 const processFormBody = upload.single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
 
-app.post('/photo/new', hasSessionRecord, (request, response) => {
+app.post('/photos/new', hasSessionRecord, (request, response) => {
     processFormBody(request, response, err => {
         // Check error request:
         if (err || !request.file) {
@@ -176,7 +208,7 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => 
     }
 
     // find the photo being commented: comment's photo_id and photo's _id is the same
-    Photo.findOne({_id: new ObjectId(request.params.photo_id)})
+    Photo.findOne({ _id: new ObjectId(request.params.photo_id) })
          .then(photo => {
             if (!photo) {
                 // handle not found
@@ -196,11 +228,15 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => 
                 response.status(200).send(); // send back succeed response
             }
          })
-         .catch(error => console.error('Error Finding Photo with Photo ID', error));
+         .catch(error => {
+            console.error('Error Finding Photo with Photo ID', error);
+            response.status(400).json({ message: "Other error occured: " });
+         });
 });
 
 /**
- * * Jian Zhong: Project 7, API for loggging in a user
+ * * Jian Zhong: Project 7, problem 1's endpiont
+ * API for loggging in a user
  * Provides a way for the photo app's LoginRegister view to login in a user
  */
 app.post('/admin/login', (request, response) => {
@@ -209,20 +245,32 @@ app.post('/admin/login', (request, response) => {
      * if match, send back greeting to client
      * if not match, send 400 status code(Bad Request).
      */
+    console.log(request.body.login_name);
+    console.log(request.body.login_name);
     User.findOne({ login_name: request.body.login_name })
         .then(user => {
-            // Login name NOT exists, response status 400 and info "Login name is not a valid account"
             if (!user) {
-                response.status(400).json({ message: "Status: 400, Login name is NOT found" });
-            } else {
-            // Login name found, reply with information for logged in user
+                // Login name NOT exists, response status 400 and info "Login name is not a valid account"
+                console.log("Does not exist the user");
+                response.status(400).json({ message: `Login name "${request.body.login_name}" des not exist` });
+            } 
+            else if (user.password !== request.body.password) {
+                // Verify password 
+                console.log("Password wrong");
+                response.status(400).json({ message: `Password is not correct, please try again` });
+            }
+            else {
+                // Login name found, reply with information for logged in user
                 console.log("** Server: User loggin Success! **");
                 const userObj = JSON.parse(JSON.stringify(user));  // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
                 request.session.userIdRecord = userObj._id;        // save login user id to session to have browser remember the current user
                 response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
             }
         })
-        .catch(error => console.error( `** Error occured: ${error}. **` ));
+        .catch(error => {
+            console.error(`** Error occured: ${error}. **`);
+            response.status(400).json({ message: "Other error occured: " });
+        });
 });
 
 
@@ -241,13 +289,13 @@ app.post('/admin/logout', (request, response) => {
         request.session.destroy(err => {
             // return status code 400 if error occurs during destroying session
             if (err) {
-                response.sendStatus(400);
                 console.log("Error in destroying the session");
+                response.status(400).send();
             }
             else {
                 // Delete session successfully, send 200 code!
-                response.sendStatus(200);
                 console.log("OK");
+                response.status(200).send();
             }
         });
     }
@@ -359,7 +407,7 @@ app.get('/user/list', hasSessionRecord ,function (request, response) {
             });
 
             // Send response to client
-            response.json(newUsers);            
+            response.status(200).json(newUsers);            
         }
     });
 });
@@ -411,7 +459,6 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
             console.log(`** Server: fuond /photosOfUser/${id} Success! **`);
             let count = 0;                                        // count the number of processed photos 
             const photoList = JSON.parse(JSON.stringify(photos)); // get data from server and convert to JS data
-            // ! Why _id will change????????????????????????????????????????????????/
 
             // For each photo in photos list:
             photoList.forEach(photo => {
@@ -438,7 +485,7 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
                         response.status(400).json({ message: "Error occured in finding commments under a photo" });
                     } else if (count === photoList.length) {
                         // Response to client only after aysnc.each() has processed all Photos in photoList.
-                        response.json(photoList);  // Response to client, finanly!
+                        response.status(200).json(photoList);  // Response to client, finanly!
                     }
                 }); // end of "async.eachOf(photo.comments,)"
             }); // end of "photoList.forEach(photo)"
@@ -446,7 +493,6 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
         }
     });    
 });
-
 
 
 

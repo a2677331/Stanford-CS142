@@ -66,7 +66,7 @@ class TopBar extends React.Component {
       domForm.append("uploadedphoto", this.uploadInput.files[0]);
       // send POST request to server to add uploaded photo
       axios
-        .post('photo/new', domForm)
+        .post('photos/new', domForm)
         .then((response) => {
           if (response.status === 200) {
             console.log("** TopBar: photo POST update successfully **");
