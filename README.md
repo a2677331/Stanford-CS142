@@ -1,5 +1,6 @@
 # Stanford-CS142 Web Applications (Fall 2022)
 
+### Course Projects
 [Project 2](https://github.com/a2677331/Stanford-CS142/tree/main/project2) ✅ Done! <br/>
 [Project 3](https://github.com/a2677331/Stanford-CS142/tree/main/project3) ✅ Done! <br/>
 [Project 4](https://github.com/a2677331/Stanford-CS142/tree/main/project4) ✅ Done! <br/>
