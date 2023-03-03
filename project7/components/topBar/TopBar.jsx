@@ -49,9 +49,8 @@ class TopBar extends React.Component {
     axios
       .post('/admin/logout')
       .then(response => {
-        console.log("** Received Response from Server **");
         if (response.status === 200) {
-          console.log("** Success: log out ", response.data);
+          console.log("** TopBar: log out OK **");
           this.props.onLoginUserChange(null);
         }
       })
@@ -69,9 +68,8 @@ class TopBar extends React.Component {
       axios
         .post('photo/new', domForm)
         .then((response) => {
-          console.log("** Received Response Server **");
           if (response.status === 200) {
-            console.log("** Success: photo POST update successfully **");
+            console.log("** TopBar: photo POST update successfully **");
             this.props.onPhotoUpload(); // notify parent component
           }
         })
@@ -122,11 +120,10 @@ class TopBar extends React.Component {
           {/* Log Out Button */}
           <Button
             onClick={this.handleLogOut}
-            style={{ flexGrow: 0, color: "white" }}
+            variant="contained"
           >
             Logout
           </Button>
-          {/* <Alert onClose={() => {}}>User is currently logged out.</Alert> */}
         </Toolbar>
       </AppBar>
     );

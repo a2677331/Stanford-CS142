@@ -35,6 +35,7 @@ export default class UserPhotos extends React.Component {
       .then(response => { 
         this.setState({ user: response.data });
         this.props.onUserNameChange(response.data.first_name + ' ' + response.data.last_name);
+        console.log("** UserPhotos: fetched User Photos **");
       })
       .catch(error => console.log( "/user/ Error: ", error));
   }

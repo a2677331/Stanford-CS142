@@ -16,7 +16,7 @@ class PhotoShare extends React.Component {
     super(props);
     this.state = {
       userName: null,            // which user the login user is viewing
-      loginUser: null,           
+      loginUser: null,           // use to check if an user is logged
       photoIsUploaded: false
       /**
        * * login user's first name and id

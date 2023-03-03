@@ -22,9 +22,9 @@ class UserDetail extends React.Component {
     axios
     .get(url)
     .then((response) => { // Handle success:
-      console.log("** Succes: fetched data from " + url + " **");
       this.setState({ user: response.data });
       this.props.onUserNameChange( response.data.first_name + " " + response.data.last_name );
+      console.log("** UserDetail: fetched user detial **");
     })
     .catch(error => {     // Handle error:
       console.log("** Error: something happened in the setting up the request. **\n", error.message);

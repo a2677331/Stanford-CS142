@@ -84,6 +84,7 @@ app.use(session({
     store: new MongoStore({ mongooseConnection: mongoose.connection })
 })); 
 
+
 /**
  * Middleware to parse application/json
  *  */ 
@@ -98,18 +99,21 @@ app.use(bodyParser.json());
  * @param response 
  * @param next 
  */
-function isAuthenticated(request, response, next) {
+function hasSessionRecord(request, response, next) {
     if (request.session.userIdRecord) {
-        console.log("Authenticattion Passes.");
-        next();
+        console.log("Session: detect current user");
+        next(); // continue to next step
     }
     else {
-        console.log("Authenticattion Failed.");
+        console.log("Session: NO active user!");
         response.status(401).json({ message: 'Unauthorized' });
-        // ! You forgot to send the status, .json() or .send() neeed.
     }
 }
 
+
+app.post('/user', hasSessionRecord, (request, response) => {
+    response.status(200).json({ message: 'Server: Register OK'});
+});
 
 /**
  * * Jian Zhong: Project 7, problem 3's endpoint 
@@ -120,7 +124,7 @@ function isAuthenticated(request, response, next) {
 const upload = multer({ storage: multer.memoryStorage() }); // to handle multipart/form-data
 const processFormBody = upload.single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
 
-app.post('/photo/new', isAuthenticated, (request, response) => {
+app.post('/photo/new', hasSessionRecord, (request, response) => {
     processFormBody(request, response, err => {
         // Check error request:
         if (err || !request.file) {
@@ -163,7 +167,7 @@ app.post('/photo/new', isAuthenticated, (request, response) => {
  * Handle new comment:
  * store the new comment in the database
  */
-app.post('/commentsOfPhoto/:photo_id', isAuthenticated, (request, response) => {
+app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => {
     // don't want empty comment
     const commentText = request.body.comment;    // new comment 
     if (Object.keys(commentText).length === 0) { 
@@ -250,7 +254,7 @@ app.post('/admin/logout', (request, response) => {
 });
 
 
-app.get('/', isAuthenticated, function (request, response) {
+app.get('/', hasSessionRecord, function (request, response) {
     console.log('Simple web server of files from ' + __dirname);
     response.send('Simple web server of files from ' + __dirname);
 });
@@ -264,7 +268,7 @@ app.get('/', isAuthenticated, function (request, response) {
  *                       is good for testing connectivity with  MongoDB.
  * /test/counts - Return an object with the counts of the different collections in JSON format
  */
-app.get('/test/:p1', isAuthenticated, function (request, response) {
+app.get('/test/:p1', hasSessionRecord, function (request, response) {
     // Express parses the ":p1" from the URL and returns it in the request.params objects.
     var param = request.params.p1 || 'info';
 
@@ -330,7 +334,7 @@ app.get('/test/:p1', isAuthenticated, function (request, response) {
  * * because of isAuthenticated() middleware,
  * * requst to this path will hang forever.
  */
-app.get('/user/list', isAuthenticated ,function (request, response) {
+app.get('/user/list', hasSessionRecord ,function (request, response) {
     User.find({}, function(err, users) {
         // Error handling
         if (err) {
@@ -365,7 +369,7 @@ app.get('/user/list', isAuthenticated ,function (request, response) {
  * Jian Zhong
  * URL /user/:id - Return the information for User (id)
  */
-app.get('/user/:id', isAuthenticated, function (request, response) {
+app.get('/user/:id', hasSessionRecord, function (request, response) {
     /**
      * Finding a single user from user's ID
      */
@@ -394,7 +398,7 @@ app.get('/user/:id', isAuthenticated, function (request, response) {
  * * Jian Zhong 
  * * URL /photosOfUser/:id - Return the Photos for User (id)
  */
-app.get('/photosOfUser/:id', isAuthenticated, function (request, response) {
+app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
     var id = request.params.id;
 
     /**

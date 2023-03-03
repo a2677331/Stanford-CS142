@@ -10,8 +10,8 @@ cs142-main- here.
 }
 
 .cs142-main-grid-item {
-  height: 80%;
-  padding: 20px;
+  height: 95%;
+  padding: 2%;
   /* height: calc(100vh - 85px); */
 }
 

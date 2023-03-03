@@ -10,7 +10,7 @@ import axios from "axios";
  * Generate a list of items from users' names,
  * and link to user's detail when clicked
  */
-class UserList extends React.Component {
+export default class UserList extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -21,33 +21,28 @@ class UserList extends React.Component {
   }
   
    // Use Axios to send request and update the users state variable. 
-  fetchData() {
-    /**
-     * * Only show user lsit when login
-     */
-    if (this.props.loginUser) {
-      axios
-        .get(this.url, { cancelToken: this.source.token }) // returning a promise
-        .then(response => { // Handle success
-          this.setState({ users: response.data });
-          console.log("** Finish setting User List !**");
-        })
-        .catch(error => {     // Handle error
-          console.log(`** Error: ${error.message} **\n`);
-          if (axios.isCancel(error)) {
-            console.log('Request canceled', error.message);
-          } else if (error.response) {
-            // if status code from server is out of the range of 2xx.
-            console.log("** Error: status code from server is out of the range of 2xx. **\n", error.response.status);
-          } else if (error.request) {
-            // if request was made and no response was received.
-            console.log("** Error: request was made and no response was received. **\n", error.request);
-          } else {
-            // something happened in the setting up the request
-            console.log("** Error: something happened in the setting up the request. **\n", error.message);
-          }
-        });
-    }
+  axios_fetchData() {
+    axios
+      .get(this.url, { cancelToken: this.source.token }) // returning a promise
+      .then(response => { // Handle success
+        this.setState({ users: response.data });
+        console.log("** UserList: fetched User List **");
+      })
+      .catch(error => {     // Handle error
+        console.log(`** Error: ${error.message} **\n`);
+        if (axios.isCancel(error)) {
+          console.log('Request canceled', error.message);
+        } else if (error.response) {
+          // if status code from server is out of the range of 2xx.
+          console.log("** Error: status code from server is out of the range of 2xx. **\n", error.response.status);
+        } else if (error.request) {
+          // if request was made and no response was received.
+          console.log("** Error: request was made and no response was received. **\n", error.request);
+        } else {
+          // something happened in the setting up the request
+          console.log("** Error: something happened in the setting up the request. **\n", error.message);
+        }
+      });
   }
   
   // load user list when page first load or user refreash
@@ -57,17 +52,15 @@ class UserList extends React.Component {
      * * otherwise don't fetch data.
      */
     if (this.props.loginUser) {
-      this.fetchData();
+      this.axios_fetchData();
     }
   }
 
   // to populate user list on side bar once the user logs in
   componentDidUpdate(prevProps) {
-    /**
-     * * Detect if user loggin status changes
-     */
-    if (this.props.loginUser !== prevProps.loginUser) {
-      this.fetchData();
+    // Need to detect if user loggin status changes
+    if (this.props.loginUser !== prevProps.loginUser && this.props.loginUser) {
+      this.axios_fetchData();
     }
   }
 
@@ -99,5 +92,3 @@ class UserList extends React.Component {
     return <List component="nav">{userList}</List>;
   }
 }
-
-export default UserList;
