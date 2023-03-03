@@ -250,7 +250,7 @@ app.post('/admin/login', (request, response) => {
             if (!user) {
                 // Login name NOT exists, response status 400 and info "Login name is not a valid account"
                 console.log("Does not exist the user");
-                response.status(400).json({ message: `Login name "${request.body.login_name}" des not exist` });
+                response.status(400).json({ message: `Login name "${request.body.login_name}" does not exist, please try again` });
             } 
             else if (user.password !== request.body.password) {
                 // Verify password 
