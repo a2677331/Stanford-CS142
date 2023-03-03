@@ -245,8 +245,6 @@ app.post('/admin/login', (request, response) => {
      * if match, send back greeting to client
      * if not match, send 400 status code(Bad Request).
      */
-    console.log(request.body.login_name);
-    console.log(request.body.login_name);
     User.findOne({ login_name: request.body.login_name })
         .then(user => {
             if (!user) {
