@@ -23,21 +23,28 @@ export default class UserPhotos extends React.Component {
    * from user ID
    *  */
   axios_fetch_photos_and_user() {
-    // To get photo data
-    axios 
-    .get(`/photosOfUser/${this.props.match.params.userId}`) // photo url
-    .then(response => this.setState({ photos: response.data }))
-    .catch(error => console.log( "/photosOfUser/ Error: ", error));
-
     // To get photo's Author data
     axios
       .get(`/user/${this.props.match.params.userId}`)  // user url
       .then(response => { 
         this.setState({ user: response.data });
-        this.props.onUserNameChange(response.data.first_name + ' ' + response.data.last_name);
+        this.props.onUserNameChange(response.data.first_name + ' ' + response.data.last_name); // handle TopBar user name change
+
+        // handle current page refresh
+        this.props.onLoginUserChange({  // ! why refresh will have error in console ?????????????????????????????????? 
+          first_name: response.data.first_name,
+          _id: response.data._id,
+        });
+
         console.log("** UserPhotos: fetched User Photos **");
       })
       .catch(error => console.log( "/user/ Error: ", error));
+
+    // To get photo data
+    axios 
+      .get(`/photosOfUser/${this.props.match.params.userId}`) // photo url
+      .then(response => this.setState({ photos: response.data }))
+      .catch(error => console.log( "/photosOfUser/ Error: ", error));
   }
 
 

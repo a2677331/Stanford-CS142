@@ -148,9 +148,8 @@ export default class LoginRegister extends React.Component {
 
   render() {
     // Handle jumping into the login User's detail page if user is authorizedx
-    const loginUser = this.props.loginUser;
-    if (loginUser) {
-      return <Redirect from="/login-register" to={`/users/${loginUser._id}`} />;
+    if (this.props.loginUser) {
+      return <Redirect from="/login-register" to={`/users/${this.props.loginUser._id}`} />;
        // the state prop in <Redirect> is used to pass data between components when using client-side routing
     }
 

@@ -13,7 +13,7 @@ class UserDetail extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      user: null,
+      user: null, // to receive user detail data from server
     };
   }
 
@@ -21,21 +21,31 @@ class UserDetail extends React.Component {
   axios_fetchData(url) {
     axios
     .get(url)
-    .then((response) => { // Handle success:
-      this.setState({ user: response.data });
-      this.props.onUserNameChange( response.data.first_name + " " + response.data.last_name );
-      console.log("** UserDetail: fetched user detial **");
+    .then(response => { // Handle success:
+
+      // handle current page refresh
+      this.props.onLoginUserChange({  // ! why refresh will have error in console ?????????????????????????????????? 
+        first_name: response.data.first_name, 
+        _id: response.data._id,
+      });
+
+      this.props.onUserNameChange( response.data.first_name + " " + response.data.last_name ); // handle TopBar user name change
+      this.setState({ user: response.data }); // to display user detail data
+      console.log("** UserDetail: fetched user detail **");
     })
     .catch(error => {     // Handle error:
-      console.log("** Error: something happened in the setting up the request. **\n", error.message);
+      console.log("** Error in UserDetail **\n", error.message);
     });
   }
 
-  // load data when page first load or refreash
+  // load data when page first load or refresh the page
   componentDidMount() {
+    console.log("DID Mount");
     // Make request to server only when there is id
     if (this.props.match.params.userId) {
-      const url = `http://localhost:3000/user/${this.props.match.params.userId}`;
+      console.log("did has user id: ", this.props.match.params.userId);
+      console.log("login User: ", this.props.loginUser);
+      const url = `/user/${this.props.match.params.userId}`;
       this.axios_fetchData(url);
     }
   }
@@ -48,7 +58,7 @@ class UserDetail extends React.Component {
     const prevUserID = prevProps.match.params.userId;
     const currUserID = this.props.match.params.userId;
     if (prevUserID !== currUserID && currUserID) {
-      const url = `http://localhost:3000/user/${currUserID}`;
+      const url = `/user/${currUserID}`;
       this.axios_fetchData(url);
     }
   }

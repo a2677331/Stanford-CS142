@@ -15,13 +15,13 @@ class PhotoShare extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      userName: null,            // which user the login user is viewing
+      photoIsUploaded: false,
+      userName: null,            // which user the login user is currently viewing
       loginUser: null,           // use to check if an user is logged
-      photoIsUploaded: false
       /**
        * * login user's first name and id
        * * fetched from loginRegister component and pass up to the whole App
-       * * for other child componenets use
+       * * and for other child componenets use
        *  */ 
     };
   }
@@ -96,10 +96,11 @@ class PhotoShare extends React.Component {
                   </Route>
                   {/* User detail View */}
                   <Route path="/users/:userId">
-                    {(props) => (
+                    {props => (
                       <UserDetail
                         {...props}
                         onUserNameChange={this.handleUserNameChange}
+                        onLoginUserChange={this.handleLoginUserChange}
                         loginUser={this.state.loginUser}
                       />
                     )}
@@ -107,12 +108,13 @@ class PhotoShare extends React.Component {
                   </Route>
                   {/* User photo View */}
                   <Route path="/photos/:userId">
-                    {(props) => (
+                    {props => (
                       <UserPhotos
                         {...props}
                         onUserNameChange={this.handleUserNameChange}
-                        photoIsUploaded={this.state.photoIsUploaded}
+                        onLoginUserChange={this.handleLoginUserChange}
                         loginUser={this.state.loginUser}
+                        photoIsUploaded={this.state.photoIsUploaded}
                       />
                     )}
                   </Route>

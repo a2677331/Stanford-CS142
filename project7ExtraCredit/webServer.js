@@ -79,8 +79,8 @@ app.use(express.static(__dirname));
  */
 app.use(session({
     secret: 'secretKey', 
-    resave: false, 
-    saveUninitialized: false,
+    resave: false,            // don't save session if unmodified
+    saveUninitialized: false, // don't create session until something stored
     store: new MongoStore({ mongooseConnection: mongoose.connection })
 })); 
 

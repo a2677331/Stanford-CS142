@@ -16,14 +16,12 @@ export default class UserList extends React.Component {
     this.state = {
       users: null,
     };
-    this.url = "http://localhost:3000/user/list"; // user list URL
-    this.source = axios.CancelToken.source();
   }
   
    // Use Axios to send request and update the users state variable. 
   axios_fetchData() {
     axios
-      .get(this.url, { cancelToken: this.source.token }) // returning a promise
+      .get("http://localhost:3000/user/list") // user list URL
       .then(response => { // Handle success
         this.setState({ users: response.data });
         console.log("** UserList: fetched User List **");
@@ -62,10 +60,6 @@ export default class UserList extends React.Component {
     if (this.props.loginUser !== prevProps.loginUser && this.props.loginUser) {
       this.axios_fetchData();
     }
-  }
-
-  componentWillUnmount() {
-    this.source.cancel("Request cancelled by user");
   }
 
   render() {

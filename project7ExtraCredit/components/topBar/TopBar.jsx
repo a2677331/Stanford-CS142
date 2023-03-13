@@ -12,7 +12,6 @@ class TopBar extends React.Component {
   constructor(props) {
     super(props);
     this.state = { version: null };
-    this.source = axios.CancelToken.source();
     this.uploadInput = null; // photo upload input
   }
 
@@ -21,26 +20,19 @@ class TopBar extends React.Component {
    * Execute after first render is completed.
    */
   componentDidMount() {
-    const url = "http://localhost:3000/test/info"; // Load version number from server
-
     /**
      * * Only show version number when login
      */
     if (this.props.loginUser) {  
       // Use Axios to send request and set the version state variable.
       axios 
-        .get(url, { cancelToken: this.source.token })
+        .get("http://localhost:3000/test/info") // Load version number from server
         .then(response => { // Handle success
           console.log("** Topbar: fetched version number **");
           this.setState({ version: response.data.__v });
         })
         .catch(e => console.log("Error: logout error in posting ", e.message));
     }
-  }
-
-  // hanlde axios request cancellation
-  componentWillUnmount() {
-    this.source.cancel("Request cancelled by user");
   }
 
   // Handle user log out
