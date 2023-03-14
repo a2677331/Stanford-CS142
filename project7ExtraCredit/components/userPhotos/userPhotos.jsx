@@ -29,13 +29,10 @@ export default class UserPhotos extends React.Component {
       .then(response => { 
         this.setState({ user: response.data });
         this.props.onUserNameChange(response.data.first_name + ' ' + response.data.last_name); // handle TopBar user name change
-
-        // handle current page refresh
-        this.props.onLoginUserChange({  // ! why refresh will have error in console ?????????????????????????????????? 
+        this.props.onLoginUserChange({      // handle page refresh
           first_name: response.data.first_name,
           _id: response.data._id,
         });
-
         console.log("** UserPhotos: fetched User Photos **");
       })
       .catch(error => console.log( "/user/ Error: ", error));
@@ -61,10 +58,7 @@ export default class UserPhotos extends React.Component {
    * To fetch photos and author data when click the "See Photo" button.
    *  */ 
   componentDidMount() {
-    // when there is an id after "/photos/<user_id>"
-    if (this.props.match.params.userId) { 
-      this.axios_fetch_photos_and_user();
-    }
+    this.axios_fetch_photos_and_user();
   }
 
   /**
@@ -80,90 +74,88 @@ export default class UserPhotos extends React.Component {
 
     
   render() {
-    // If not yet login, redirect to login page
-    if (!this.props.loginUser) {
+    // * Note: need to add "|| !this.state.user || !this.state.photos",
+    // * so that after redirecting to another page, this.state.user and this.state.photos
+    // * won't be accessed on another page,
+    // * else it will cause unmount error in browser's console 
+    if (this.props.loginUser || !this.state.user || !this.state.photos) {
+      // If there is user photo, then display user photos
+      return (
+          this.state.photos && this.state.user && (
+            <Grid justifyContent="flex-start" container spacing={3}>
+              {/* Loop through all the photos */}
+              {this.state.photos.map((photo) => (
+
+                // Each photo's layout
+                <Grid item xs={6} key={photo._id}>
+                  <Card variant="outlined">
+                    {/* Each photo's author name and author post time */}
+                    <CardHeader
+                      avatar={(
+                        <Avatar style={{ backgroundColor: "#FF7F50" }}>
+                          {this.state.user.first_name[0]}
+                        </Avatar>
+                      )}                
+                      title={(
+                        <Link to={`/users/${this.state.user._id}`}>
+                          {`${this.state.user.first_name} ${this.state.user.last_name}`}
+                        </Link>
+                      )}
+                      subheader={photo.date_time}
+                    />
+
+                    {/* Each photo's image */}
+                    <CardMedia
+                      component="img"
+                      image={`./images/${photo.file_name}`}
+                      alt="Anthor Post"
+                    />
+
+                    {/* Comments' layout */}
+                    <CardContent>
+                      {/* Loop through all comments under the photo */}
+                      {photo.comments && (
+                        <Typography variant="subtitle1">
+                          Comments:
+                          <Divider />
+                        </Typography>
+                      )}
+                      {photo.comments.map((c) => (
+                        <List key={c._id}>
+                          <Typography variant="subtitle2">
+                            <Link to={`/users/${c.user._id}`}>
+                              {`${c.user.first_name} ${c.user.last_name}`}
+                            </Link>
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="textSecondary"
+                            gutterBottom
+                          >
+                            {c.date_time}
+                          </Typography>
+                          <Typography variant="body1">
+                            {`"${c.comment}"`}
+                          </Typography>
+                        </List>
+                      ))}
+
+                      {/* Comment dialog box */}
+                      <CommentDialog
+                        onCommentSumbit={this.handleCommentSumbit}
+                        photo_id={photo._id}
+                      />
+                    </CardContent>
+
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )
+        ); 
+    } else {
       return <Redirect to={`/login-register`} />;
     }
-
-    // If there is no user, then render below:
-    if (!this.state.user) {
-      return <p>Loading</p>;
-    }
-
-    // If there is user photo, then display user photos
-    return (
-      this.state.photos && (
-        <Grid justifyContent="flex-start" container spacing={3}>
-          {/* Loop through all the photos */}
-          {this.state.photos.map((photo) => (
-
-            // Each photo's layout
-            <Grid item xs={6} key={photo._id}>
-              <Card variant="outlined">
-                {/* Each photo's author name and author post time */}
-                <CardHeader
-                  avatar={(
-                    <Avatar style={{ backgroundColor: "#FF7F50" }}>
-                      {this.state.user.first_name[0]}
-                    </Avatar>
-                  )}                
-                  title={(
-                    <Link to={`/users/${this.state.user._id}`}>
-                      {`${this.state.user.first_name} ${this.state.user.last_name}`}
-                    </Link>
-                  )}
-                  subheader={photo.date_time}
-                />
-
-                {/* Each photo's image */}
-                <CardMedia
-                  component="img"
-                  image={`./images/${photo.file_name}`}
-                  alt="Anthor Post"
-                />
-
-                {/* Comments' layout */}
-                <CardContent>
-                  {/* Loop through all comments under the photo */}
-                  {photo.comments && (
-                    <Typography variant="subtitle1">
-                      Comments:
-                      <Divider />
-                    </Typography>
-                  )}
-                  {photo.comments.map((c) => (
-                    <List key={c._id}>
-                      <Typography variant="subtitle2">
-                        <Link to={`/users/${c.user._id}`}>
-                          {`${c.user.first_name} ${c.user.last_name}`}
-                        </Link>
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="textSecondary"
-                        gutterBottom
-                      >
-                        {c.date_time}
-                      </Typography>
-                      <Typography variant="body1">
-                        {`"${c.comment}"`}
-                      </Typography>
-                    </List>
-                  ))}
-
-                  {/* Comment dialog box */}
-                  <CommentDialog
-                    onCommentSumbit={this.handleCommentSumbit}
-                    photo_id={photo._id}
-                  />
-                </CardContent>
-
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )
-    );
   }
 
 }

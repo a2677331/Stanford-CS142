@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
-import { Grid, Typography, Paper } from '@material-ui/core';
+import { Grid, Paper } from '@material-ui/core';
 import './styles/main.css';
 
 // import necessary components
@@ -87,13 +87,6 @@ class PhotoShare extends React.Component {
               <Paper className="cs142-main-grid-item" elevation={3}>
                 {/* ALl unauthorized visit would go to login page */}
                 <Switch>
-                  {/* Login/Register View */}
-                  <Route path="/login-register">
-                    <LoginRegister
-                      onLoginUserChange={this.handleLoginUserChange}
-                      loginUser={this.state.loginUser}
-                    />
-                  </Route>
                   {/* User detail View */}
                   <Route path="/users/:userId">
                     {props => (
@@ -118,23 +111,16 @@ class PhotoShare extends React.Component {
                       />
                     )}
                   </Route>
-                  {/* User list View */}
-                  <Route path="/users">
-                    {this.state.loginUser ? (
-                      <UserList loginUser={this.state.loginUser} />
-                    ) : (
-                      <Redirect to={`/login-register`} />
-                    )}
-                  </Route>
-                  {/* Home page View */}
-                  <Route path="/">
-                    {this.props.loginUser ? (
-                      <Typography variant="h3">
-                        Welcome to my photosharing app!
-                      </Typography>
-                    ) : (
-                      <Redirect to={`/login-register`} />
-                    )}
+                  {/* Login/Register View */}
+                  <Route path="/login-register">
+                    <LoginRegister
+                      onLoginUserChange={this.handleLoginUserChange}
+                      loginUser={this.state.loginUser}
+                    />
+                  </Route>                  
+                  {/* All the other addresses will go to login page */}
+                  <Route>
+                    <Redirect to={`/login-register`} />
                   </Route>
                 </Switch>
               </Paper>
