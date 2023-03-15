@@ -6,7 +6,7 @@
 ✅ [Project 4](https://github.com/a2677331/Stanford-CS142/tree/main/project4)  <br/>
 ✅ [Project 5](https://github.com/a2677331/Stanford-CS142/tree/main/project5react)  <br/>
 ✅ [Project 6](https://github.com/a2677331/Stanford-CS142/tree/main/project6react)  <br/>
-✅ [Project 7](https://github.com/a2677331/Stanford-CS142/tree/main/project7)  <br/>
+✅ [Project 7](https://github.com/a2677331/Stanford-CS142/tree/main/project7%26ExtraCredits)  <br/>
 (Ongoing) [Project 8](https://github.com/a2677331/Stanford-CS142/tree/main/project8) 
 
 ### Course Description
