@@ -1,0 +1,21 @@
+{
+  "name": "project7test",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mocha test of server API",
+  "main": "serverApiTest.js",
+  "dependencies": {
+    "crypto-random-string": "^5.0.0",
+    "lodash": "^4.17.21",
+    "randomstring": "^1.2.3",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "mocha": "^9.2.0"
+  },
+  "scripts": {
+    "test": "mocha serverApiTest.js sessionInputApiTest.js cs142passwordTest.js"
+  },
+  "author": "Mendel Rosenblum <mendel@cs.stanford.edu> (http://www.stanford.edu/~mendel)",
+  "license": "ISC"
+}
