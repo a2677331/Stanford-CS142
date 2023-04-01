@@ -53,8 +53,6 @@ export default class LoginRegister extends React.Component {
       passwordClearText: this.state.password,
     };  
     
-    console.log(loginUser);
-
     // axios to send a POST request with login info
     axios
       .post("/admin/login", loginUser) // POST request sent!
@@ -87,9 +85,6 @@ export default class LoginRegister extends React.Component {
       return;
     }
 
-    const newUser = this.getNewUser();
-    console.log(newUser); // ! asdfafsdafwfwef
-    
     // axios to send a POST request with login info
     axios
       .post("/user", this.getNewUser()) // POST request sent!

@@ -1,0 +1,42 @@
+CS142 Project 8 - Submission Form
+
+Please fill in this form and submit it with your Project 8.
+
+Enter no more than 5 user stories that you did for the assignment that you would
+like to be graded on. For each story include the following information:
+
+Story number and name:
+Story points:
+Brief description to see the story in action:
+
+Total Story Points:
+
+Marketing Video URL (ensure permissions are set to public viewing):
+
+Is it OK if we post your Marketing Video URL on the class discussion forum?
+[Yes/No]
+
+Any special instructions for grading (it should be easy for someone to run your
+app from a new machine):
+
+************************************ Example ***********************************
+* As an example: if you did only story 5, your file would look like:
+* 
+* Story number and name:  5 - Activity Feed
+* Story points:  4
+* Brief description to see the story in action:
+* Push the button labeled Activity on the toolbar to view the 10 most recent
+* activities of the current user.
+* 
+* Total Story Points: 4
+* 
+* Marketing Video URL (ensure permissions are set to public viewing):
+* http://www.youtube.com ---
+* 
+* Is it OK if we post your Marketing Video URL on the class discussion forum?
+* Yes
+* 
+* Any special instructions for grading (it should be easy for someone to run
+* your app from a new machine):
+* None
+************************************ Example ***********************************
