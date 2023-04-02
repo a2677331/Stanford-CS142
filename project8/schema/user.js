@@ -15,7 +15,8 @@ var userSchema = new mongoose.Schema({
     occupation: String,  // Occupation of the user.
     login_name: String,  // Identifier the user will type when logging in
     password_digest: String,   // SHA-1 hashed password for the user
-    salt: String,
+    salt: String,        // random calculated characters as salt for password
+    total_likes: Number, // total number of likes a user has 
 });
 
 // the schema is useless so far

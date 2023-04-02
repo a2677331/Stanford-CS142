@@ -59,7 +59,7 @@ class PhotoShare extends React.Component {
                 {/* Use paths.map() to populate the same Topbar component for different routes */}
                 {paths.map((path) => (
                   <Route key={path} path={path}>
-                    {(props) => (
+                    {props => (
                       <TopBar
                         {...props}
                         onLoginUserChange={this.handleLoginUserChange}
@@ -72,19 +72,18 @@ class PhotoShare extends React.Component {
                 ))}
               </Switch>
             </Grid>
-
             <div className="cs142-main-topbar-buffer" />
 
             {/* Sidebar View */}
-            <Grid item sm={3}>
-              <Paper className="side-bar" elevation={3}>
+            <Grid item sm={3} >
+              <Paper className="side-bar" elevation={3} style={{ backgroundColor: "#abd1c6", margin: '3%', border: "4px solid black" }}>
                 <UserList loginUser={this.state.loginUser} />
               </Paper>
             </Grid>
 
             {/* Main View */}
-            <Grid item sm={9}>
-              <Paper className="cs142-main-grid-item" elevation={3}>
+            <Grid item sm={9} >
+              <Paper className="cs142-main-grid-item" elevation={3} style={{ backgroundColor: "#abd1c6", height: '100%', marginTop: '1%', marginRight: '2%', border: "4px solid black" }}>
                 {/* ALl unauthorized visit would go to login page */}
                 <Switch>
                   {/* User detail View */}

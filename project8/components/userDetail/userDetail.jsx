@@ -86,7 +86,7 @@ export default class UserDetail extends React.Component {
               to={this.state.user && `/photos/${this.state.user._id}`}
               component={Link}
               variant="contained"
-              color="primary"
+              style={{ backgroundColor: "#f9bc60" }}
             >
               See Photos
             </Button>

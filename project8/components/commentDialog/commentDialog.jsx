@@ -42,7 +42,7 @@ export default class CommentDialog extends React.Component {
     render() {
       return (
         <div className="comment-dialog">
-          <Chip label="Reply" onClick={this.handleClickOpen}/>
+          <Chip label="Reply" onClick={this.handleClickOpen} style={{ backgroundColor: "#abd1c6", border: "1px solid black" }} />
           {/* onClose: when mouse click outside of the dialog box, then close the dialog */}
           <Dialog open={this.state.open} onClose={this.handleClickClose} >
             <DialogContent>
@@ -51,7 +51,7 @@ export default class CommentDialog extends React.Component {
             </DialogContent>
             <DialogActions>
               <Button onClick={this.handleClickClose}>Cancel</Button>
-              <Button onClick={this.handleCommentSubmit}>Submit</Button>
+              <Button onClick={this.handleCommentSubmit} style={{ backgroundColor: "#f9bc60", border: "1px solid black" }}>Submit</Button>
             </DialogActions>
           </Dialog>
         </div>

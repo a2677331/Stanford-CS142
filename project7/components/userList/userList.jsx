@@ -83,7 +83,7 @@ export default class UserList extends React.Component {
           {/* Link's "to" attribute must be direct link address */}
           <ListItemText
             style={{ paddingLeft: "8px" }}
-            primary={<Typography variant="h5">{`${user.first_name} ${user.last_name}`} </Typography>}
+            primary={<Typography variant="h5">{`${user.first_name} ${user.last_name}`}</Typography>}
           />
         </ListItem>
       ));

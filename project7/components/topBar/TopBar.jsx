@@ -50,8 +50,8 @@ class TopBar extends React.Component {
       .post('/admin/logout')
       .then(response => {
         if (response.status === 200) {
-          console.log("** TopBar: log out OK **");
           this.props.onLoginUserChange(null);
+          console.log("** TopBar: log out OK **");
         }
       })
       .catch(e => console.log("Error: logout error in posting ", e.message));
@@ -115,7 +115,6 @@ class TopBar extends React.Component {
               <Button type="submit" variant="contained">Upload</Button>
             </form>
           )}
-
 
           {/* Log Out Button */}
           <Button
