@@ -1,7 +1,12 @@
+/**
+ * * Jian Zhong: Project 7 Extra Credits
+ * * Deal with  password salt and hashing
+ */
+
 const { createHash } = require('node:crypto');
 const { randomBytes } = require('node:crypto');
 
-/*
+/**
  * Return a salted and hashed password entry from a
  * clear text password.
  * @param {string} clearTextPassword
@@ -22,7 +27,7 @@ function makePasswordEntry(clearTextPassword) {
 }
 
 
-/*
+/**
  * Return true if the specified clear text password
  * and salt generates the specified hash.
  * @param {string} hash

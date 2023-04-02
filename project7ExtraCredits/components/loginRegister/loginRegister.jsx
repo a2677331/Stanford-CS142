@@ -191,7 +191,7 @@ export default class LoginRegister extends React.Component {
           {/* Register inputs */}
           <Grid item xs={8}>
             <form onSubmit={this.handleRegisterSubmit}>
-              {this.customForm("New Login Name*", "newLoginName", "text", this.state.newLoginName, true)}
+              {this.customForm("Login Name*", "newLoginName", "text", this.state.newLoginName, true)}
               {this.customForm("First Name*", "firstName", "text", this.state.firstName, true)}
               {this.customForm("Last Name*", "lastName", "text", this.state.lastName, true)}
               {this.customForm("New Password*", "newPassword", "password", this.state.newPassword, true)}
@@ -207,7 +207,7 @@ export default class LoginRegister extends React.Component {
                 variant="contained"
                 color="primary"
               >
-                Register Me
+                Register Me!
               </Button>
               <br/><br/>
               {this.state.registeredMessage && (

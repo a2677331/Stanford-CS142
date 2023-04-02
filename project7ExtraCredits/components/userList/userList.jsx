@@ -1,8 +1,12 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { List, ListItem, ListItemText, Typography, Divider } from "@material-ui/core";
+import { List, ListItem, ListItemText, ListItemIcon, Typography, Divider } from "@material-ui/core";
 import "./userList.css";
 import axios from "axios";
+import {
+  PersonOutlineOutlined,
+  Person,
+} from "@material-ui/icons";
 
 /**
  * * Jian Zhong
@@ -15,6 +19,7 @@ export default class UserList extends React.Component {
     super(props);
     this.state = {
       users: null,
+      selectedButtonIndex: null,
     };
   }
   
@@ -56,35 +61,45 @@ export default class UserList extends React.Component {
 
   // to populate user list on side bar once the user logs in
   componentDidUpdate(prevProps) {
+    
     // Need to detect if user loggin status changes
     if (this.props.loginUser !== prevProps.loginUser && this.props.loginUser) {
       this.axios_fetchData();
     }
   }
 
+
+  handleClick = (index) => {
+    this.setState({ selectedButtonIndex: index }); // update selected button index
+  };
+
   render() {
     let userList; // <Link> component
-
-    // The user list only display if the current user is logged in
+  
+    // The user list only displays if the current user is logged in
     if (this.state.users && this.props.loginUser) {
-      userList = this.state.users.map((user) => (
-        <React.Fragment key={user._id}>
+      userList = this.state.users.map((user, index) => (
+        <React.Fragment key={index}  >
           <ListItem
-            to={`/users/${user._id}`}
-            component={Link}
+            to={`/users/${user._id}`} 
+            component={Link} onClick={() => this.handleClick(index)}
             button
-          >
-            {/* Link's "to" attribute must be direct link address */}
-            <ListItemText
-              style={{ paddingLeft: "8px" }}
-              primary={<Typography variant="h5">{`${user.first_name} ${user.last_name}`} </Typography>}
-            />
+            style={{ backgroundColor: this.state.selectedButtonIndex === index ? "#004643" : "",
+             color: this.state.selectedButtonIndex === index ? "#ffff" : "" }}
+           >
+           {/* Selected style for button icons */}
+           {
+             this.state.selectedButtonIndex === index ?
+             <ListItemIcon><Person fontSize="large" style={{ color: "#ffff" }}/></ListItemIcon> :
+             <ListItemIcon><PersonOutlineOutlined fontSize="large" /></ListItemIcon>
+           }
+              <ListItemText primary={<Typography variant="h6">{`${user.first_name} ${user.last_name}`}</Typography>} />
           </ListItem>
-          <Divider/>
+          <Divider />
         </React.Fragment>
       ));
     }
-
+    // style={{ paddingLeft: "8px" }}
     return <List component="nav">{userList}</List>;
   }
 }

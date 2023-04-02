@@ -80,6 +80,75 @@ app.use(session({
 app.use(bodyParser.json());  
 
 
+
+
+
+/**
+ * * Jian Zhong: Project 7, problem 1's endpiont
+ * API for loggging in a user
+ * Provides a way for the photo app's LoginRegister view to login in a user
+ */
+app.post('/admin/login', (request, response) => {
+    /**
+     * See if the request's loginName matches database
+     * if match, send back greeting to client
+     * if not match, send 400 status code(Bad Request).
+     */
+    User.findOne({ login_name: request.body.login_name })
+        .then(user => {
+            if (!user) {
+                // Verify valid account
+                console.log("Does not exist the user");
+                response.status(400).json({ message: `Account "${request.body.login_name}" does not exist, please try again` });
+            } 
+            else if ( !doesPasswordMatch(user.password_digest, user.salt, request.body.passwordClearText) ) {
+                // Verify the password 
+                console.log("Password wrong");
+                response.status(400).json({ message: `Password is not correct, please try again` });
+            }
+            else {
+                // Login OK! Reply with information for logged in user
+                console.log("** Server: User login Success! **");
+                const userObj = JSON.parse(JSON.stringify(user));  // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
+                request.session.userIdRecord = userObj._id;              // save login user id to session to have browser remember the current user
+                request.session.userFirstNameRecord = userObj.first_name;// save login user first name to session to have browser remember the current user
+                response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
+            }
+        })
+        .catch(error => {
+            console.error(`** Error occured: ${error}. **`);
+            response.status(400).json({ message: "Other error occured" });
+        });
+});
+
+
+/**
+ * * Jian Zhong: Project 7, API for logging out in a user
+ * A POST request with an empty body to this URL will logout the user by clearing the information stored in the session. 
+ * An HTTP status of 400 (Bad request) should be returned in the user is not currently logged in
+ */
+app.post('/admin/logout', (request, response) => {
+    // return status code 400 if user is currently not logged in
+    if (!request.session.userIdRecord) {
+        response.status(400).json({ message: "User is not logged in" });
+        console.log("You already logged out, no need to do again.");
+    } else {
+        // clear the information stored in the session
+        request.session.destroy(err => {
+            // return status code 400 if error occurs during destroying session
+            if (err) {
+                console.log("Error in destroying the session");
+                response.status(400).send();
+            }
+            else {
+                // Delete session successfully, send 200 code!
+                console.log("OK");
+                response.status(200).send();
+            }
+        });
+    }
+});
+
 /**
  * * Jian Zhong: Project 7, problem 1 login and logout
  * * Function to check if the user is logged,
@@ -154,6 +223,7 @@ app.post('/user', (request, response) => {
  * const processFormBody = upload.single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
  */
 app.post('/photos/new', hasSessionRecord, (request, response) => {
+
     processFormBody(request, response, err => {
         // Check error request:
         if (err || !request.file) {
@@ -231,72 +301,6 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => 
          });
 });
 
-
-/**
- * * Jian Zhong: Project 7, problem 1's endpiont
- * API for loggging in a user
- * Provides a way for the photo app's LoginRegister view to login in a user
- */
-app.post('/admin/login', (request, response) => {
-    /**
-     * See if the request's loginName matches database
-     * if match, send back greeting to client
-     * if not match, send 400 status code(Bad Request).
-     */
-    User.findOne({ login_name: request.body.login_name })
-        .then(user => {
-            if (!user) {
-                // Verify valid account
-                console.log("Does not exist the user");
-                response.status(400).json({ message: `Account "${request.body.login_name}" does not exist, please try again` });
-            } 
-            else if ( !doesPasswordMatch(user.password_digest, user.salt, request.body.passwordClearText) ) {
-                // Verify the password 
-                console.log("Password wrong");
-                response.status(400).json({ message: `Password is not correct, please try again` });
-            }
-            else {
-                // Login OK! Reply with information for logged in user
-                console.log("** Server: User login Success! **");
-                const userObj = JSON.parse(JSON.stringify(user));  // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
-                request.session.userIdRecord = userObj._id;              // save login user id to session to have browser remember the current user
-                request.session.userFirstNameRecord = userObj.first_name;// save login user first name to session to have browser remember the current user
-                response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
-            }
-        })
-        .catch(error => {
-            console.error(`** Error occured: ${error}. **`);
-            response.status(400).json({ message: "Other error occured" });
-        });
-});
-
-
-/**
- * * Jian Zhong: Project 7, API for logging out in a user
- * A POST request with an empty body to this URL will logout the user by clearing the information stored in the session. 
- * An HTTP status of 400 (Bad request) should be returned in the user is not currently logged in
- */
-app.post('/admin/logout', (request, response) => {
-    // return status code 400 if user is currently not logged in
-    if (!request.session.userIdRecord) {
-        response.status(400).json({ message: "User is not logged in" });
-        console.log("You already logged out, no need to do again.");
-    } else {
-        // clear the information stored in the session
-        request.session.destroy(err => {
-            // return status code 400 if error occurs during destroying session
-            if (err) {
-                console.log("Error in destroying the session");
-                response.status(400).send();
-            }
-            else {
-                // Delete session successfully, send 200 code!
-                console.log("OK");
-                response.status(200).send();
-            }
-        });
-    }
-});
 
 
 app.get('/', hasSessionRecord, function (request, response) {
