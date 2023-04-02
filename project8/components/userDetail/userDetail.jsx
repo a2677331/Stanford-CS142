@@ -23,9 +23,9 @@ export default class UserDetail extends React.Component {
       .get(url)
       .then(response => {
         this.props.onUserNameChange( response.data.first_name + " " + response.data.last_name ); // handle TopBar user name change
-        this.props.onLoginUserChange({          // handle page refresh
-          first_name: response.data.first_name,
-          _id: response.data._id,
+        // handle page refresh, project 7 extra credit
+        this.props.onLoginUserChange({      
+          first_name: response.data.logged_user_first_name, // to know who is current logged user after refresh
         });
         this.setState({ user: response.data }); // to display user detail data
         console.log("** UserDetail: fetched user detail **");
@@ -36,7 +36,7 @@ export default class UserDetail extends React.Component {
   }
   
 
-  // load data when page first load or refresh the page
+  // load data when page first load or refresh the page, project 7 extra credit
   componentDidMount() {
     this.axios_fetchData(`/user/${this.props.match.params.userId}`);
   }

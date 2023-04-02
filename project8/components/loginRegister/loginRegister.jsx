@@ -3,10 +3,6 @@ import { Redirect } from 'react-router-dom';
 import axios from "axios";
 import { Typography, Grid, FormControl, InputLabel, Input, Button } from "@material-ui/core";
 
-// import sha1 from 'crypto-js/sha1'; // to generate the SHA-1 digest corresponding to that password
-// import cryptoRandomString from 'crypto-random-string'; // for getting salt
-
-
 /**
  * * Jian Zhong
  * * Project 7 codes for implementing LoginRegister component
@@ -58,16 +54,13 @@ export default class LoginRegister extends React.Component {
       .post("/admin/login", loginUser) // POST request sent!
       .then(response => {   // Handle success
         console.log(`** LoginRegister: loggin Success! **`); 
-        this.setState({ loginMessage: response.data.message });
-        this.props.onLoginUserChange(response.data);  // { first_name: , _id: }
-        // Pass back loggin user data and logged info to TopBar
+        this.props.onLoginUserChange(response.data);  // { first_name: , _id: }, Passing back loggin user data and logged info to TopBar
       })
       .catch(error => {     // Handle error
         console.log(`** LoginRegister: loggin Fail! **`); 
         console.log(error.response.data.message);
         this.setState({ loginMessage: error.response.data.message });
-        this.props.onLoginUserChange(null);  
-        // Pass back info to TopBar
+        this.props.onLoginUserChange(null);  // Pass back info to TopBar
       });
   };
 
@@ -201,11 +194,11 @@ export default class LoginRegister extends React.Component {
               {this.customForm("New Login Name*", "newLoginName", "text", this.state.newLoginName, true)}
               {this.customForm("First Name*", "firstName", "text", this.state.firstName, true)}
               {this.customForm("Last Name*", "lastName", "text", this.state.lastName, true)}
+              {this.customForm("New Password*", "newPassword", "password", this.state.newPassword, true)}
+              {this.customForm("Verify Password*", "newPassword2", "password", this.state.newPassword2, true)}
               {this.customForm("Description", "description", "text", this.state.description)}
               {this.customForm("Location", "location", "text", this.state.location)}
               {this.customForm("Occupation", "occupation", "text", this.state.occupation)}
-              {this.customForm("New Password*", "newPassword", "password", this.state.newPassword, true)}
-              {this.customForm("Re-enter Password*", "newPassword2", "password", this.state.newPassword2, true)}
               <br/><br/>
               <Button
                 type="submit"

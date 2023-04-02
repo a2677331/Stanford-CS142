@@ -7,30 +7,8 @@
  *
  * To start the webserver run the command:
  *    node webServer.js
- *
- * Note that anyone able to connect to localhost:portNo will be able to fetch any file accessible
- * to the current user in the current directory or any of its children.
- *
- * This webServer exports the following URLs:
- * /              -  Returns a text status message.  Good for testing web server running.
- * /test          - (Same as /test/info)
- * /test/info     -  Returns the SchemaInfo object from the database (JSON format).  Good
- *                   for testing database connectivity.
- * /test/counts   -  Returns the population counts of the cs142 collections in the database.
- *                   Format is a JSON object with properties being the collection name and
- *                   the values being the counts.
- *
- * The following URLs need to be changed to fetch there reply values from the database.
- * /user/list     -  Returns an array containing all the User objects from the database.
- *                   (JSON format)
- * /user/:id      -  Returns the User object with the _id of id. (JSON format).
- * /photosOfUser/:id' - Returns an array with all the photos of the User (id). Each photo
- *                      should have all the Comments on the Photo (JSON format)
  */
 
-const { createHash } = require('node:crypto');
-const { randomBytes } = require('node:crypto');
-const { makePasswordEntry, doesPasswordMatch } = require('./cs142password');
 
 /**
  * Setup Mongoose database and connect:
@@ -40,12 +18,14 @@ var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 mongoose.connect('mongodb://127.0.0.1/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
 
+
 /**
  * Setup necessary parsers middlewares:
  *  */ 
 const session = require('express-session'); // for handling session management
 const bodyParser = require('body-parser');  // for parsing the JSON encoded POST request bodies
 const multer = require('multer');           // for handling uploading photos
+const processFormBody = multer({ storage: multer.memoryStorage() }).single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
 var MongoStore = require('connect-mongo')(session);
 const fs = require("fs"); // for writing files into the filesystem
 
@@ -57,6 +37,12 @@ var express = require('express');
 var app = express();   
 var async = require('async'); // to use async.each()
 const { is } = require('bluebird');
+
+/**
+ * * Proejct 7 Extra Credit
+ * Import hash and salt functions for passwords
+ */
+const { makePasswordEntry, doesPasswordMatch } = require('./cs142password');
 
 
 // Load the Mongoose schema for User, Photo, and SchemaInfo
@@ -95,7 +81,7 @@ app.use(bodyParser.json());
 
 
 /**
- * * Jian Zhong: Project 7
+ * * Jian Zhong: Project 7, problem 1 login and logout
  * * Function to check if the user is logged,
  * * only logged user can continue next step.
  * @param request 
@@ -104,7 +90,7 @@ app.use(bodyParser.json());
  */
 function hasSessionRecord(request, response, next) {
     if (request.session.userIdRecord) {
-        console.log("Session: detect current user");
+        console.log("Session: detected current user", request.session.userIdRecord);
         next(); // continue to next step
     }
     else {
@@ -112,28 +98,6 @@ function hasSessionRecord(request, response, next) {
         response.status(401).json({ message: 'Unauthorized' });
     }
 }
-
-
-
-/*
- * Return a salted and hashed password entry from a
- * clear text password.
- * @param {string} clearTextPassword
- * @return {object} passwordEntry
- * where passwordEntry is an object with two string
- * properties:
- *      salt - The salt used for the password.
- *      hash - The sha1 hash of the password and salt
- */
-// function makePasswordEntry(clearTextPassword) {
-//     const saltText = randomBytes(8).toString('hex');
-//     const sha1 = createHash('sha1');
-//     sha1.update(saltText + clearTextPassword);
-//     return {
-//         salt: saltText,
-//         hash: sha1.digest('hex'),
-//     };
-// }
 
 
 /**
@@ -189,9 +153,6 @@ app.post('/user', (request, response) => {
  * const upload = multer({ storage: multer.memoryStorage() }); // to handle multipart/form-data
  * const processFormBody = upload.single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
  */
-const upload = multer({ storage: multer.memoryStorage() }); // to handle multipart/form-data
-const processFormBody = upload.single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
-
 app.post('/photos/new', hasSessionRecord, (request, response) => {
     processFormBody(request, response, err => {
         // Check error request:
@@ -271,21 +232,6 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => 
 });
 
 
-
-
-/*
- * Return true if the specified clear text password
- * and salt generates the specified hash.
- * @param {string} hash
- * @param {string} salt
- * @param {string} clearTextPassword
- * @return {boolean}
- */
-// function doesPasswordMatch(hash, salt, clearTextPassword) {
-//     const sha1 = createHash('sha1'); // use sha1 hash to verify password
-//     return hash === sha1.update(salt + clearTextPassword).digest('hex');
-// }
-
 /**
  * * Jian Zhong: Project 7, problem 1's endpiont
  * API for loggging in a user
@@ -300,9 +246,9 @@ app.post('/admin/login', (request, response) => {
     User.findOne({ login_name: request.body.login_name })
         .then(user => {
             if (!user) {
-                // Verify valid account"
+                // Verify valid account
                 console.log("Does not exist the user");
-                response.status(400).json({ message: `Login name "${request.body.login_name}" does not exist, please try again` });
+                response.status(400).json({ message: `Account "${request.body.login_name}" does not exist, please try again` });
             } 
             else if ( !doesPasswordMatch(user.password_digest, user.salt, request.body.passwordClearText) ) {
                 // Verify the password 
@@ -310,16 +256,17 @@ app.post('/admin/login', (request, response) => {
                 response.status(400).json({ message: `Password is not correct, please try again` });
             }
             else {
-                // Login OK, reply with information for logged in user
+                // Login OK! Reply with information for logged in user
                 console.log("** Server: User login Success! **");
                 const userObj = JSON.parse(JSON.stringify(user));  // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
-                request.session.userIdRecord = userObj._id;        // save login user id to session to have browser remember the current user
+                request.session.userIdRecord = userObj._id;              // save login user id to session to have browser remember the current user
+                request.session.userFirstNameRecord = userObj.first_name;// save login user first name to session to have browser remember the current user
                 response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
             }
         })
         .catch(error => {
             console.error(`** Error occured: ${error}. **`);
-            response.status(400).json({ message: "Other error occured: " });
+            response.status(400).json({ message: "Other error occured" });
         });
 });
 
@@ -482,6 +429,7 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
                 const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
                 console.log(`** Server: found /user/${id} Success! **`);
                 delete userObj.__v;                               // remove unnecessary property
+                userObj.logged_user_first_name = request.session.userFirstNameRecord; // save logged user first name for TopBar
                 response.status(200).json(userObj);
             }
         })

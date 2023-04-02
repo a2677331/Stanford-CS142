@@ -1,32 +1,7 @@
+"use strict";
+
 /* jshint node: true */
 
-/*
- * This builds on the webServer of previous projects in that it exports the current
- * directory via webserver listing on a hard code (see portno below) port. It also
- * establishes a connection to the MongoDB named 'cs142project6'.
- *
- * To start the webserver run the command:
- *    node webServer.js
- *
- * Note that anyone able to connect to localhost:portNo will be able to fetch any file accessible
- * to the current user in the current directory or any of its children.
- *
- * This webServer exports the following URLs:
- * /              -  Returns a text status message.  Good for testing web server running.
- * /test          - (Same as /test/info)
- * /test/info     -  Returns the SchemaInfo object from the database (JSON format).  Good
- *                   for testing database connectivity.
- * /test/counts   -  Returns the population counts of the cs142 collections in the database.
- *                   Format is a JSON object with properties being the collection name and
- *                   the values being the counts.
- *
- * The following URLs need to be changed to fetch there reply values from the database.
- * /user/list     -  Returns an array containing all the User objects from the database.
- *                   (JSON format)
- * /user/:id      -  Returns the User object with the _id of id. (JSON format).
- * /photosOfUser/:id' - Returns an array with all the photos of the User (id). Each photo
- *                      should have all the Comments on the Photo (JSON format)
- */
 
 var ObjectId = require('mongodb').ObjectId; 
 
@@ -43,6 +18,8 @@ mongoose.connect('mongodb://127.0.0.1/cs142project6', { useNewUrlParser: true, u
 const session = require('express-session'); // for handling session management
 const bodyParser = require('body-parser');  // for parsing the JSON encoded POST request bodies
 const multer = require('multer');           // for handling uploading photos
+const processFormBody = multer({ storage: multer.memoryStorage() }).single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
+
 var MongoStore = require('connect-mongo')(session);
 const fs = require("fs"); // for writing files into the filesystem
 
@@ -153,9 +130,6 @@ app.post('/user', (request, response) => {
  * const upload = multer({ storage: multer.memoryStorage() }); // to handle multipart/form-data
  * const processFormBody = upload.single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
  */
-const upload = multer({ storage: multer.memoryStorage() }); // to handle multipart/form-data
-const processFormBody = upload.single('uploadedphoto');     // accept a single file with the name "uploadedphoto". The single file will be stored in req.file.
-
 app.post('/photos/new', hasSessionRecord, (request, response) => {
     processFormBody(request, response, err => {
         // Check error request:

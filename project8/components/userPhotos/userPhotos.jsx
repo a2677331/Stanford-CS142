@@ -30,8 +30,7 @@ export default class UserPhotos extends React.Component {
         this.setState({ user: response.data });
         this.props.onUserNameChange(response.data.first_name + ' ' + response.data.last_name); // handle TopBar user name change
         this.props.onLoginUserChange({      // handle page refresh
-          first_name: response.data.first_name,
-          _id: response.data._id,
+          first_name: response.data.logged_user_first_name, // to know who is current logged user after refresh
         });
         console.log("** UserPhotos: fetched User Photos **");
       })

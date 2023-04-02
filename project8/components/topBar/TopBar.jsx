@@ -20,20 +20,16 @@ class TopBar extends React.Component {
    * Execute after first render is completed.
    */
   componentDidMount() {
-    /**
-     * * Only show version number when login
-     */
-    if (this.props.loginUser) {  
-      // Use Axios to send request and set the version state variable.
-      axios 
-        .get("http://localhost:3000/test/info") // Load version number from server
-        .then(response => { // Handle success
-          console.log("** Topbar: fetched version number **");
-          this.setState({ version: response.data.__v });
-        })
-        .catch(e => console.log("Error: logout error in posting ", e.message));
-    }
+    // Use Axios to send request and set the version state variable.
+    axios 
+      .get("http://localhost:3000/test/info") // Load version number from server
+      .then(response => { // Handle success
+        console.log("** Topbar: fetched version number **");
+        this.setState({ version: response.data.__v });
+      })
+      .catch(e => console.log("Error: logout error in posting ", e.message));
   }
+
 
   // Handle user log out
   handleLogOut = () => {
@@ -83,7 +79,7 @@ class TopBar extends React.Component {
           {/* Display greeting to Login User*/}
           <Typography variant="h5" style={{ flexGrow: 1 }}>
             {this.props.loginUser ? 
-              `👋 Hi, ${this.props.loginUser.first_name}`
+              `Account of ${this.props.loginUser.first_name}`
             :
               "😄 Please Login"}
           </Typography>
