@@ -9,7 +9,7 @@ import { Typography, Grid, FormControl, InputLabel, Input, Button } from "@mater
  */
 
 
-export default class LoginRegister extends React.Component {
+class LoginRegister extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -225,3 +225,9 @@ export default class LoginRegister extends React.Component {
     );
   }
 }
+
+
+
+
+
+export default LoginRegister;
