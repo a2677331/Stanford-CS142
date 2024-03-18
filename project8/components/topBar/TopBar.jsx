@@ -27,9 +27,9 @@ function TopBar(props) {
     axios
       .get("http://localhost:3000/test/info") // Load version number from server
       .then(response => {
-      // Handle success
-      setVersion(response.data.__v);
-      console.log("** Topbar: fetched version number **");
+        // Handle success
+        setVersion(response.data.version);
+        console.log('** Topbar: fetched version number **', response.data);
       })
       .catch(err => console.log("Error: logout error in posting...", err.message));
   };
@@ -137,7 +137,7 @@ function TopBar(props) {
         {/* App name and Version */}
         <Typography variant="h5" style={{ flexGrow: 1 }}>
           FakeBook
-          {props.loginUser && ` ver: ${version}`}
+          {props.loginUser && ` v${version}`}
         </Typography>
 
         {/* Display greeting to Login User*/}

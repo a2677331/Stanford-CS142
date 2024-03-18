@@ -227,7 +227,4 @@ class LoginRegister extends React.Component {
 }
 
 
-
-
-
 export default LoginRegister;

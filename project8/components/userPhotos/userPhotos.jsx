@@ -89,7 +89,7 @@ function UserPhotos(props) {
       second: "numeric",
     };
     return date.toLocaleDateString("en-US", options);
-  }
+  };
   
     // * Note: need to add "|| !user || !photos",
     // * so that after redirecting to another page, user and photos
@@ -103,7 +103,7 @@ function UserPhotos(props) {
             {photos.map((photo) => (
               // Each photo's layout
               <Grid item xs={4} key={photo._id} >
-                <Card style={{ border: "3px solid black" }} >
+                <Card style={{ border: "1px solid black" }} >
                   {/* Each photo's author name and author post time */}
                   <CardHeader
                     avatar={(
@@ -179,3 +179,4 @@ function UserPhotos(props) {
 }
 
 export default UserPhotos;
+

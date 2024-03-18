@@ -8,7 +8,7 @@ var Schema = mongoose.Schema;
 
 // create a schema
 var schemaInfo = new Schema({
-    version: String,
+    version: Number,
     load_date_time: {type: Date, default: Date.now},
 });
 

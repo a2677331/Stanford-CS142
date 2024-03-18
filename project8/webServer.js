@@ -1,12 +1,18 @@
 /* jshint node: true */
 
 /*
+ * The command "node webServer.js" starts the web server and connects to a MongoDB instance 
+ * on the localhost at the standard port address. 
+ * 
+ * The URL http://localhost:3000/photo-share.html should start the app.
+ * 
  * This builds on the webServer of previous projects in that it exports the current
  * directory via webserver listing on a hard code (see portno below) port. It also
  * establishes a connection to the MongoDB named 'cs142project6'.
  *
  * To start the webserver run the command:
  *    node webServer.js
+ * 
  */
 
 
@@ -49,6 +55,7 @@ const { makePasswordEntry, doesPasswordMatch } = require('./cs142password');
 var User = require('./schema/user.js');
 var Photo = require('./schema/photo.js');
 var SchemaInfo = require('./schema/schemaInfo.js');
+const { format } = require('path');
 
 
 // We have the express static module (http://expressjs.com/en/starter/static-files.html) 
@@ -109,10 +116,11 @@ app.post('/admin/login', (request, response) => {
             else {
                 // Login OK! Reply with information for logged in user
                 console.log("** Server: User login Success! **");
-                const userObj = JSON.parse(JSON.stringify(user));  // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
+                const userObj = JSON.parse(JSON.stringify(user));        // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
                 request.session.userIdRecord = userObj._id;              // save login user id to session to have browser remember the current user
                 request.session.userFirstNameRecord = userObj.first_name;// save login user first name to session to have browser remember the current user
-                response.status(200).json({ first_name: userObj.first_name, _id: userObj._id }); // reply back with first name of the user                
+                response.status(200).json({ first_name: userObj.first_name, 
+                                            _id: userObj._id });         // reply back with first name of the user                
             }
         })
         .catch(error => {
@@ -253,8 +261,8 @@ app.post('/photos/new', hasSessionRecord, (request, response) => {
             date_time: timestamp,
             user_id: request.session.userIdRecord
         })
-        .then(() => console.log(`** Server: photo saved in the DB **`))
-        .catch(e =>  console.log(`** Error during photo saving into the DB: ${e} **`));
+            .then(() => console.log(`** Server: photo saved in the DB **`))
+            .catch(e =>  console.log(`** Error during photo saving into the DB: ${e} **`));
        
         response.status(200).send();  // must send back succeed response
     });
@@ -270,7 +278,7 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => 
     // don't want empty comment
     const commentText = request.body.comment;    // new comment 
     if (Object.keys(commentText).length === 0) { 
-        response.status(400).json({ message: "Status 400: empty comment is not allowed" });
+        response.status(400).json({ message: "Server: empty comment is not allowed" });
         return;
     }
 
@@ -279,7 +287,7 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => 
          .then(photo => {
             if (!photo) {
                 // handle not found
-                response.status(400).json({ message: "Status: 400, Photo not found" });
+                response.status(400).json({ message: "Server: Photo you just commented is not found" });
             } else {
                 // handle found photo
                 const commentObj = {
@@ -287,17 +295,17 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => 
                     date_time: new Date().toISOString(),
                     user_id: request.session.userIdRecord // logged user id is the session user id
                 };
-                // add the new comment to photo's comment list and store it
+                // initiazlie a new photo comment list or add to an existing list
                 if (!photo.comments) photo.comments = [commentObj];
                 else photo.comments.push(commentObj);
                 photo.save();
-                console.log("** Server: comment added to photo! **");
                 response.status(200).send(); // send back succeed response
+                console.log("** Server: a new comment added! **");
             }
          })
          .catch(error => {
-            console.error('Error Finding Photo with Photo ID', error);
             response.status(400).json({ message: "Other error occured: " });
+            console.error('Server: Error Finding Photo with Photo ID', error);
          });
 });
 
@@ -339,7 +347,6 @@ app.get('/test/:p1', hasSessionRecord, function (request, response) {
             }
 
             // We got the object - return it in JSON format.
-            // console.log('SchemaInfo', info[0]);
             response.end(JSON.stringify(info[0]));
         });
     } else if (param === 'counts') {
@@ -413,6 +420,20 @@ app.get('/user/list', hasSessionRecord ,function (request, response) {
     });
 });
 
+/*
+ * Jian Zhong
+ * for formatting date time into a more readable format
+ * Example of dateTimeString: '2010-08-30T21:26:00.000Z'
+ * Example of return: 'Aug 30, 2010, 02:26 PM'
+ */
+function formatDateTime(dateTimeString) {
+    const dateTime = new Date(dateTimeString);
+
+    // Format the date for display
+    const options = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+    const dateTimeFormat = new Intl.DateTimeFormat('en-US', options);
+    return dateTimeFormat.format(dateTime);
+}
 
 /*
  * Jian Zhong
@@ -431,10 +452,35 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
             } else {
                 // handle found
                 const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
-                console.log(`** Server: found /user/${id} Success! **`);
                 delete userObj.__v;                               // remove unnecessary property
                 userObj.logged_user_first_name = request.session.userFirstNameRecord; // save logged user first name for TopBar
-                response.status(200).json(userObj);
+                console.log(`** Server: found /user/${id} Success! **`);
+
+                // Get most recent photo and most commented photo
+                Photo.find( {user_id: id}, (err, photosData) => {
+                    if (err) {
+                        response.status(400).json({ message: `Photos for user with id ${id}: Not Found` });
+                    } else {
+                        const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
+
+                        // get the most recent uploaded photo
+                        photos.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime()); // sort photos in a descending order by date
+                        if (photos.length > 0) {
+                            userObj.mostRecentPhotoName = photos[0].file_name;
+                            userObj.mostRecentPhotoDate= formatDateTime(photos[0].date_time);
+                        }
+
+                        // get the most commented photo
+                        photos.sort((a, b) => b.comments.length - a.comments.length);
+                        if (photos.length > 0) {
+                            userObj.mostCommentedPhotoName = photos[0].file_name;
+                            userObj.commentsCount = photos[0].comments.length;
+                        }
+
+                        // response the data back to the frontend browser
+                        response.status(200).json(userObj);
+                    }
+                });
             }
         })
         .catch(error => {
@@ -446,52 +492,57 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
 
 /**
  * * Jian Zhong 
- * * URL /photosOfUser/:id - Return the Photos for User (id)
+ * * URL /photosOfUser/:id - Return the Photos from User's id
  */
 app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
     var id = request.params.id;
 
     /**
-     * Finding a single user from user's ID
+     * Finding a single user's photos from the user's ID
      */
-    Photo.find({user_id: id}, (err, photos) => {
+    Photo.find( {user_id: id}, (err, photosData) => {
         if (err) {
             response.status(400).json({ message: `Photos for user with id ${id}: Not Found` });
         } else {
-            console.log(`** Server: fuond /photosOfUser/${id} Success! **`);
+            console.log(`** Server: found /photosOfUser/${id} Successfully! **`);
             let count = 0;                                        // count the number of processed photos 
-            const photoList = JSON.parse(JSON.stringify(photos)); // get data from server and convert to JS data
+            const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
+
+            // sort photos in a descending order
+            photos.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime());
 
             // For each photo in photos list:
-            photoList.forEach(photo => {
-                delete photo.__v;  // remove the unnessary property before sending to client.
+            photos.forEach(photo => {
+                delete photo.__v;  // remove the unnessary property before sending to client 
+                photo.date_time = formatDateTime(photo.date_time);  // make date time of each photo more readable
 
                 /**
-                 * * To fecth multiple modules, need to use async.each().
-                 * For each comment in comments list: 
+                 * * To fecth multiple modules, need to use async.eachOf().
+                 * Since each commment under photo contains only user_id property, 
+                 * so need to find comment text from user_id, and create each commment object
                  */
-                async.eachOf(photo.comments, (comment, index, callback) => {
-                    // Use comment's user_id to get user object and update comment's user property.
-                    User.findOne({_id: comment.user_id}, (error, user) => {
+                async.eachOf(photo.comments, (comment, index, done_callback) => {
+                    // For each comment in comments list, use user_id property to find user object in Mongo database
+                    User.findOne( {_id: comment.user_id}, (error, user) => {
                         if (!error) {
                             const userObj = JSON.parse(JSON.stringify(user)); // parse retrieved Mongoose user data
                             const {location, description, occupation, __v, ...rest} = userObj; // only keep (_id, first_name, last_name) properties
                             photo.comments[index].user = rest;      // update the user obj to each comment's user property.
                             delete photo.comments[index].user_id;   // remove unnessary property for each comment
                         }
-                        callback(error);
+                        done_callback(error);
                     });
                 }, error => {
                     count += 1;
                     if (error) {
                         response.status(400).json({ message: "Error occured in finding commments under a photo" });
-                    } else if (count === photoList.length) {
+                    } else if (count === photos.length) {
                         // Response to client only after aysnc.each() has processed all Photos in photoList.
-                        response.status(200).json(photoList);  // Response to client, finanly!
+                        response.status(200).json(photos);  // Response to client, finally!
                     }
                 }); // end of "async.eachOf(photo.comments,)"
-            }); // end of "photoList.forEach(photo)"
 
+            }); // end of "photoList.forEach(photo)"
         }
     });    
 });
