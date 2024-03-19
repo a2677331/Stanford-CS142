@@ -30,28 +30,24 @@ function UserPhotos(props) {
    * use axios to get photos data and photo's Author data
    * from user ID
    */
-  const axios_fetch_photos_and_user = () => {
+  const axios_fetch_photos_and_user = userID => {
     // To get photos' Author data
     axios
-      .get(`/user/${props.match.params.userId}`) // user url
+      .get(`/author/${userID}`) // user url
       .then(response => {
         setUser(response.data);
-        props.onUserNameChange(
-          response.data.first_name + " " + response.data.last_name
-        ); // handle TopBar user name change
-        props.onLoginUserChange({
-          // handle page refresh
-          first_name: response.data.logged_user_first_name, // to know who is current logged user after refresh
-        });
-        console.log("** UserPhotos: fetched User Photos **");
+        props.onUserNameChange(response.data.first_name + " " + response.data.last_name); // handle TopBar user name change
+        props.onLoginUserChange({ first_name: response.data.logged_user_first_name }); // handle page refresh, to know who is current logged user after refresh
       })
-      .catch( err => console.log("/user/ Error: ", err) );
+      .catch(err => console.log("/user/ Error: ", err));
 
     // To get user's photos
     axios
-      .get(`/photosOfUser/${props.match.params.userId}`) // photo url
-      .then( response => setPhotos(response.data) )
-      .catch( err => console.log("/photosOfUser/ Error: ", err) );
+      .get(`/photosOfUser/${userID}`) // photo url
+      .then(response => {
+        setPhotos(response.data);
+      })
+      .catch(err => console.log("/photosOfUser/ Error: ", err));
   };
 
   /**
@@ -60,8 +56,8 @@ function UserPhotos(props) {
    * @param props.photoIsUploaded: if a new photo was updated
    */
     useEffect(() => {
-      axios_fetch_photos_and_user();
-    }, [props.photoIsUploaded]);
+      axios_fetch_photos_and_user(props.match.params.userId);
+    }, [props.photoIsUploaded, props.match.params.userId]);
 
   /**
    * To re-fetch data from server once comment is submitted,
@@ -127,7 +123,7 @@ function UserPhotos(props) {
                   />
 
                   <CardActions>
-                    <IconButton aria-label="like">
+                    <IconButton aria-label="like" style={{ margin: "0 auto" }}>
                       <ThumbUpOutlined />
                     </IconButton>
                   </CardActions>

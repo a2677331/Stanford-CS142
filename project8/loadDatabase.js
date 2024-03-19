@@ -53,7 +53,7 @@ Promise.all(removePromises).then(function () {
             location: user.location,
             description: user.description,
             occupation: user.occupation,
-            login_name: user.last_name.toLowerCase(),
+            login_name: user.last_name.toLowerCase(), // to login with this value and password
             password_digest: '3c53e115625c62868a32faaee3e0021b27850541',
             salt: "12345678",
         }).then(function (userObj) {

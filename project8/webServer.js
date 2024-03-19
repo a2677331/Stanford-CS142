@@ -87,9 +87,6 @@ app.use(session({
 app.use(bodyParser.json());  
 
 
-
-
-
 /**
  * * Jian Zhong: Project 7, problem 1's endpiont
  * API for loggging in a user
@@ -115,10 +112,10 @@ app.post('/admin/login', (request, response) => {
             }
             else {
                 // Login OK! Reply with information for logged in user
-                console.log("** Server: User login Success! **");
+                console.log(`** Server: User logined: ${request.body.login_name}`);
                 const userObj = JSON.parse(JSON.stringify(user));        // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
-                request.session.userIdRecord = userObj._id;              // save login user id to session to have browser remember the current user
-                request.session.userFirstNameRecord = userObj.first_name;// save login user first name to session to have browser remember the current user
+                request.session.sessionUserID = userObj._id;              // save login user id to session to have browser remember the current user
+                request.session.sessionUserFirstName = userObj.first_name;// save login user first name to session to have browser remember the current user
                 response.status(200).json({ first_name: userObj.first_name, 
                                             _id: userObj._id });         // reply back with first name of the user                
             }
@@ -137,7 +134,7 @@ app.post('/admin/login', (request, response) => {
  */
 app.post('/admin/logout', (request, response) => {
     // return status code 400 if user is currently not logged in
-    if (!request.session.userIdRecord) {
+    if (!request.session.sessionUserID) {
         response.status(400).json({ message: "User is not logged in" });
         console.log("You already logged out, no need to do again.");
     } else {
@@ -166,8 +163,8 @@ app.post('/admin/logout', (request, response) => {
  * @param next 
  */
 function hasSessionRecord(request, response, next) {
-    if (request.session.userIdRecord) {
-        console.log("Session: detected current user", request.session.userIdRecord);
+    if (request.session.sessionUserID) {
+        console.log("Session: detected current user: ", request.session);
         next(); // continue to next step
     }
     else {
@@ -259,7 +256,7 @@ app.post('/photos/new', hasSessionRecord, (request, response) => {
         Photo.create({
             file_name: filename,
             date_time: timestamp,
-            user_id: request.session.userIdRecord
+            user_id: request.session.sessionUserID
         })
             .then(() => console.log(`** Server: photo saved in the DB **`))
             .catch(e =>  console.log(`** Error during photo saving into the DB: ${e} **`));
@@ -293,7 +290,7 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => 
                 const commentObj = {
                     comment: commentText, 
                     date_time: new Date().toISOString(),
-                    user_id: request.session.userIdRecord // logged user id is the session user id
+                    user_id: request.session.sessionUserID // logged user id is the session user id
                 };
                 // initiazlie a new photo comment list or add to an existing list
                 if (!photo.comments) photo.comments = [commentObj];
@@ -443,23 +440,24 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
     /**
      * Finding a single user from user's ID
      */
-    const id = request.params.id;
-    User.findOne({_id: id})
+    const userID = request.params.id;
+
+    User.findOne({_id: userID})
         .then(user => {
             if (!user) {
                 // handle not found
-                console.log(`** User ${id}: Not Found! **`);
+                console.log(`** User ${userID}: Not Found! **`);
             } else {
                 // handle found
                 const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
                 delete userObj.__v;                               // remove unnecessary property
-                userObj.logged_user_first_name = request.session.userFirstNameRecord; // save logged user first name for TopBar
-                console.log(`** Server: found /user/${id} Success! **`);
+                userObj.logged_user_first_name = request.session.sessionUserFirstName; // save logged user first name for TopBar
+                console.log(`** Server: login user's first name: ${userObj.logged_user_first_name} found! **`);
 
                 // Get most recent photo and most commented photo
-                Photo.find( {user_id: id}, (err, photosData) => {
+                Photo.find( {user_id: userID}, (err, photosData) => {
                     if (err) {
-                        response.status(400).json({ message: `Photos for user with id ${id}: Not Found` });
+                        response.status(400).json({ message: `Photos for user with id ${userID}: Not Found` });
                     } else {
                         const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
 
@@ -467,7 +465,7 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
                         photos.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime()); // sort photos in a descending order by date
                         if (photos.length > 0) {
                             userObj.mostRecentPhotoName = photos[0].file_name;
-                            userObj.mostRecentPhotoDate= formatDateTime(photos[0].date_time);
+                            userObj.mostRecentPhotoDate = formatDateTime(photos[0].date_time);
                         }
 
                         // get the most commented photo
@@ -476,15 +474,55 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
                             userObj.mostCommentedPhotoName = photos[0].file_name;
                             userObj.commentsCount = photos[0].comments.length;
                         }
-
                         // response the data back to the frontend browser
-                        response.status(200).json(userObj);
+                        // BUG: can't solve this bug so needed to split this app.get() method into 
+                        //  app.get('/author/:id')  and   
+                        //  app.get('/user/:id')    for the sake of my time.
+                        response.status(200).json(userObj); // return user detail INCLUDING recent photo and most commented photo
                     }
                 });
+
+
             }
         })
         .catch(error => {
-            console.log(`** User ${id}: Not Found! **`);
+            console.log(`** From "/user/:id": User ${userID}: Not Found! **`);
+            console.log("Error: ", error.message);
+            response.status(400).json({ message: error.message });
+        });
+});
+
+
+/*
+ * Jian Zhong
+ * URL /author/:id - Return the information for User (id)
+ * used by <userPhotos/> react component only
+ */
+app.get('/author/:id', hasSessionRecord, function (request, response) {
+    /**
+     * Finding a single user from user's ID
+     */
+    console.log("calling /author/:id");
+    const userID = request.params.id;
+
+    User.findOne({_id: userID})
+        .then(user => {
+            if (!user) {
+                // handle not found
+                console.log(`** User ${userID}: Not Found! **`);
+            } else {
+                // handle found
+                const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
+                delete userObj.__v;                               // remove unnecessary property
+                userObj.logged_user_first_name = request.session.sessionUserFirstName; // save logged user first name for TopBar
+                console.log(`** Server: login user's first name: ${userObj.logged_user_first_name} found! **`);
+                // response the data back to the frontend browser
+                response.status(200).json(userObj); // return user detail WITHOUT recent photo and most commented photo
+            }
+        })
+        .catch(error => {
+            console.log(`** From "/user/:id": User ${userID}: Not Found! **`);
+            console.log("Error: ", error.message);
             response.status(400).json({ message: error.message });
         });
 });
@@ -495,7 +533,7 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
  * * URL /photosOfUser/:id - Return the Photos from User's id
  */
 app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
-    var id = request.params.id;
+    const id = request.params.id;
 
     /**
      * Finding a single user's photos from the user's ID
@@ -541,7 +579,6 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
                         response.status(200).json(photos);  // Response to client, finally!
                     }
                 }); // end of "async.eachOf(photo.comments,)"
-
             }); // end of "photoList.forEach(photo)"
         }
     });    

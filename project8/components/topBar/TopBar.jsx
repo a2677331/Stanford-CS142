@@ -29,7 +29,6 @@ function TopBar(props) {
       .then(response => {
         // Handle success
         setVersion(response.data.version);
-        console.log('** Topbar: fetched version number **', response.data);
       })
       .catch(err => console.log("Error: logout error in posting...", err.message));
   };
@@ -64,12 +63,12 @@ function TopBar(props) {
    * Get version number from server, and display it in TopBar
    * Execute after first render is completed.
    */
-  useEffect(() => {
-    // Only when is not on login page, then use Axios to send request and set the version state variable.
-    if (!props.location.pathname.includes("/login-register")) {
-      axios_fetchVersion();
-    }
-  });
+  // useEffect(() => {
+  //   // Only when is not on login page, then use Axios to send request and set the version state variable.
+  //   if (!props.location.pathname.includes("/login-register")) {
+  //     axios_fetchVersion();
+  //   }
+  // });
 
   // Handle user log out
   const handleLogOut = () => {
