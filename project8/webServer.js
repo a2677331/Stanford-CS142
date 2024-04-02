@@ -24,6 +24,12 @@ var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 mongoose.connect('mongodb://127.0.0.1/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });
 
+/**
+ * Setup Locking Mechanisms for updating like/unlike votes
+ */
+const { Mutex } = require('async-mutex');
+const mutex = new Mutex();
+
 
 /**
  * Setup necessary parsers middlewares:
@@ -526,8 +532,11 @@ app.get('/user2/:id', hasSessionRecord, async function (request, response) {
 
 
  /** 
- * * Constructing each photo's like object: 
- * */
+  * Constructing a photo's like object
+  * @param {Object} photos 
+  * @param {Object} response 
+  * Used by app.get('/photosOfUser/:id')
+  * */
 function processPhotoLike(photos, response) {
 
     let processedPhotos = 0; // reset processed photos count for like object
@@ -558,6 +567,22 @@ function processPhotoLike(photos, response) {
 }
 
 
+/**
+ * Sort photo in descending order by likes votes first, then by date
+ * Used by app.get('/photosOfUser/:id')
+ * @param {Object} photos 
+ * @returns list of sorted photos
+ */
+function sortedPhotos(photos) {
+    return photos.sort((a, b) => {
+        // Sort by like count in descending order
+        if (b.likes.length !== a.likes.length) {
+          return b.likes.length - a.likes.length;
+        }
+        // If like counts are the same, sort by timestamp in descending order
+        return new Date(b.date_time).getTime() - new Date(a.date_time).getTime()
+      });
+}
 
 /**
  * * Jian Zhong 
@@ -577,7 +602,7 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
 
         console.log(`** Server: found /photosOfUser/${id} Successfully! **`);
         const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
-        photos.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime()); // sort photo by date in descending order first
+        sortedPhotos(photos);       // sort photo in descending order by likes votes first, then by date
 
         /**
          * * Start constructing each photo's comment object
@@ -640,36 +665,44 @@ app.post('/updatePhotoLikes/:photo_id', (request, response) => {
     const userID = request.body.action;      // like action by which user 
 
     Photo.findOne({ _id: photoID })
-         .then(photo => {
+         .then( async photo => {
             // handle not found
             if (!photo) {
                 response.status(400).json({ message: "Server: Photo you just commented is not found" });
             }
 
-            // handle found photo
-            if (photo.likes.includes(userID)) { // when hitting a liked photo
-                // Remove an item from the original list (no copy)
-                // * Since you are modifying the array in place, Mongoose is more likely to detect 
-                // * this as a change to the photo object, and the change will persist when you call photo.save().
-                let indexToRemove = photo.likes.indexOf(userID);
-                if (indexToRemove !== -1) {
-                    photo.likes.splice(indexToRemove, 1);
+            // Using async mutex to protect race conditions and update the like votes
+            try {
+                const release = await mutex.acquire();
+
+                // Critical section: Only one request can enter this section at a time
+                // Update the likes votes, handle found photo
+                if (photo.likes.includes(userID)) { // when hitting a liked photo
+                    // Remove an item from the original list (no copy)
+                    // * Since you are modifying the array in place, Mongoose is more likely to detect 
+                    // * this as a change to the photo object, and the change will persist when you call photo.save().
+                    let indexToRemove = photo.likes.indexOf(userID);
+                    if (indexToRemove !== -1) {
+                        photo.likes.splice(indexToRemove, 1);
+                    }
+
+                    // ! Why this filter() doesn't work ???????????????????????????????????????????? (OK)
+                    // photo.likes = photo.likes.filter(id => id !== userID); // remove the user id
+                    // * MongoDB's update operation didn't handle the array replacement correctly
+                    // * MongoDB recommands modifying the original array to work correctly.
+                    // * When you directly assign a new array to photo.likes, Mongoose might not detect 
+                    // * this as a change to the photo object, 
+                    // * and therefore the change might not persist when you call photo.save().
+                } else {                           // when hitting a non-liked photo
+                    photo.likes.push(userID);
                 }
-
-                // ! Why this filter() doesn't work ???????????????????????????????????????????? (OK)
-                // photo.likes = photo.likes.filter(id => id !== userID); // remove the user id
-                // * MongoDB's update operation didn't handle the array replacement correctly
-                // * MongoDB recommands modifying the original array to work correctly.
-                // * When you directly assign a new array to photo.likes, Mongoose might not detect 
-                // * this as a change to the photo object, 
-                // * and therefore the change might not persist when you call photo.save().
-            } else {                           // when hitting a non-liked photo
-                photo.likes.push(userID);
+                console.log(`** Server: ${userID} clicked like button! **`);
+                photo.save(); // Update the likes
+                release(); // Release the lock after the critical section
+                response.status(200).json({ message: "Like updated successfully!" }); // send back succeed response
+            } catch (error) {
+                response.status(500).json({ message: 'Internal server error' });
             }
-
-            console.log(`** Server: ${userID} clicked like button! **`);
-            photo.save();
-            response.status(200).json({ message: "Like updated successfully!" }); // send back succeed response
         })
          .catch(error => {
             response.status(400).json({ message: "Other error occured: " });
