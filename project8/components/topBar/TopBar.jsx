@@ -63,12 +63,14 @@ function TopBar(props) {
    * Get version number from server, and display it in TopBar
    * Execute after first render is completed.
    */
-  // useEffect(() => {
-  //   // Only when is not on login page, then use Axios to send request and set the version state variable.
-  //   if (!props.location.pathname.includes("/login-register")) {
-  //     axios_fetchVersion();
-  //   }
-  // });
+  useEffect(() => {
+    // Only when is not on login page, then use Axios to send request and set the version state variable.
+    if (!props.location.pathname.includes("/login-register")) {
+      axios_fetchVersion();
+    }
+  }, []); // []: only want to fetch version once, not every render
+  
+
 
   // Handle user log out
   const handleLogOut = () => {
@@ -141,6 +143,7 @@ function TopBar(props) {
 
         {/* Display greeting to Login User*/}
         <Typography variant="h5" style={{ flexGrow: 1 }}>
+          {console.log("Login user in TopBar: ", props.loginUser)}
           {props.loginUser
             ? `👋 Welcome back, ${props.loginUser.first_name}!`
             : "😄 Please Login"}
@@ -193,7 +196,7 @@ function TopBar(props) {
           message="You are currently logged out."
           action={(
             <IconButton color="secondary" onClick={handleClose}>
-              <CloseRounded/>
+              <CloseRounded />
             </IconButton>
           )}
         />

@@ -15,26 +15,31 @@ import LoginRegister from './components/loginRegister/loginRegister';
 function PhotoShare() {
   const [photoIsUploaded, setPhotoIsUploaded] = useState(false);
   const [userName, setUserName] = useState(null);     // which user the login user is currently viewing
-
+  const [loginUser, setLoginUser] = useState(null);   // use to check if an user is logged
   /**
    * * login user's first name and id
    * * fetched from loginRegister component and pass up to the whole App
    * * and for other child componenets use
    *  */ 
-  const [loginUser, setLoginUser] = useState(null);   // use to check if an user is logged
  
   
   /**
    * To get user name from child component and return back for TopBar to display
    * @param name user last name and first name
    */
-  const handleUserNameChange = name => setUserName(name);
+  const handleUserNameChange = name => {
+    console.log("Setting Viewing User to: ", name);
+    setUserName(name);
+  }
 
   /**
    * To get login user name from child component and return back for TopBar to display
    * @param user loging user's id and first name
    */
-  const handleLoginUserChange = user => setLoginUser(user);
+  const handleLoginUserChange = user => {
+    console.log("Setting login user to: ", user);
+    setLoginUser(user);
+  };
 
   /**
    * To let child component be notified photos list is updated

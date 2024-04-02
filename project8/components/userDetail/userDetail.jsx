@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useNavigate } from "react";
 import {
   Button, 
   Grid, 
@@ -7,6 +7,7 @@ import {
   CardMedia,
   CardContent,
   CardActionArea,
+  Divider
 } from "@material-ui/core";
 import { Link, Redirect } from "react-router-dom";
 import "./userDetail.css";
@@ -27,9 +28,10 @@ function UserDetail(props) {
       .get(url)
       .then(response => {
         props.onUserNameChange(response.data.first_name + " " + response.data.last_name); // handle TopBar user name change
-        props.onLoginUserChange({ first_name: response.data.logged_user_first_name }); // handle page refresh, project 7 extra credit, to know who is current logged user after refresh
+        props.onLoginUserChange({ first_name: response.data.logged_user_first_name,
+                                   last_name: response.data.logged_user_last_name,
+                                          id: response.data.logged_user_id, }); // handle page refresh, project 7 extra credit, to know who is current logged user after refresh
         setUser(response.data);  // to display user detail data
-        console.log("** UserDetail: fetched user detail **");
       })
       .catch(error => {
         console.log("** Error in UserDetail **\n", error.message);
@@ -37,11 +39,19 @@ function UserDetail(props) {
   };
 
   /**
-   * load data user when clicked on different user on the sidebar user list and show the user's detail
+   * * The useEffect runs whenever user name is clicked (site address changes),
+   * * a specific user detail page will be rendered.
    * * Project 7 extra credit: works when first load or refreshing the page.
    */
+  const { history } = props; // help direct to loginUser's detail page
   useEffect(() => {
-    axios_fetchUserFrom(`/user/${props.match.params.userId}`);
+    if (props.match.params.userId === "undefined") {
+      // If the URL parameter is "undefined", redirect to the logged-in user's page
+      history.replace(`/users/${props.loginUser.id}`);
+    } else if (props.match.params.userId) {
+      // If the URL parameter is defined, fetch the specified user's data
+      axios_fetchUserFrom(`/user2/${props.match.params.userId}`);
+    }
   }, [props.match.params.userId]);
 
 
@@ -50,12 +60,13 @@ function UserDetail(props) {
   // * won't be accessed on another page,
   // * else it will cause unmount error in browser's console 
   if (props.loginUser || !user) {
+    console.log("Login user in UserDetail: ", props.loginUser);
     return (
       user && (
         <Grid container>
           <Grid item xs={12}>
             <Typography color="textSecondary">Name:</Typography>
-            <Typography variant="h6" gutterBottom="">{`${user.first_name} ${user.last_name}`}</Typography>
+            <Typography variant="h6" gutterBottom>{`${user.first_name} ${user.last_name}`}</Typography>
             <Typography color="textSecondary">Description:</Typography>
             <Typography variant="h6" gutterBottom>{`${user.description}`}</Typography>
             <Typography color="textSecondary">Location:</Typography>
@@ -64,6 +75,7 @@ function UserDetail(props) {
             <Typography variant="h6" gutterBottom>{`${user.occupation}`}</Typography>
           </Grid>
 
+            {/* most commented photo and most recently uploaded photo */}
             <Grid item xs={12} style={{ display: "flex", margin: "20px auto", justifyContent: 'center' }}>
               <Card style={{ maxWidth: 250, margin: "0 20px" }}>
                 <CardContent>
@@ -77,10 +89,11 @@ function UserDetail(props) {
                   />
                 </CardActionArea>
                 <CardContent>
-                  <Typography variant="body2" color="text.secondary">
-                    {`Date Uploaded`}
+                  <Typography variant="body2">
+                    {`Date`}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Divider/>
+                  <Typography variant="body2">
                     {`${user.mostRecentPhotoDate}`}
                   </Typography>
                 </CardContent>
@@ -97,8 +110,8 @@ function UserDetail(props) {
                   />
                 </CardActionArea>
                 <CardContent>
-                  <Typography variant="body2" color="text.secondary">
-                      {`Comments Count: ${user.commentsCount}`}
+                  <Typography variant="body2">
+                      {`${user.commentsCount} comment${user.commentsCount >= 2 ? "s" : ""}`}
                   </Typography>
                 </CardContent>
               </Card>

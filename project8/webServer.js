@@ -116,8 +116,10 @@ app.post('/admin/login', (request, response) => {
                 const userObj = JSON.parse(JSON.stringify(user));        // * convert mongoose data to JS data, needed for retrieving data from Mongoose!
                 request.session.sessionUserID = userObj._id;              // save login user id to session to have browser remember the current user
                 request.session.sessionUserFirstName = userObj.first_name;// save login user first name to session to have browser remember the current user
+                request.session.sessionUserLastName = userObj.last_name; // save login user last name to session
                 response.status(200).json({ first_name: userObj.first_name, 
-                                            _id: userObj._id });         // reply back with first name of the user                
+                                            last_name: userObj.last_name,
+                                            id: userObj._id });         // reply back with login user {first_name:, id:}     
             }
         })
         .catch(error => {
@@ -164,7 +166,6 @@ app.post('/admin/logout', (request, response) => {
  */
 function hasSessionRecord(request, response, next) {
     if (request.session.sessionUserID) {
-        console.log("Session: detected current user: ", request.session);
         next(); // continue to next step
     }
     else {
@@ -179,8 +180,6 @@ function hasSessionRecord(request, response, next) {
  * To deal with new user registration
  */
 app.post('/user', (request, response) => {
-    console.log("Server's request body");
-    console.log(request.body);
     const newUser = request.body;
 
     // Check: the first_name, last_name, and password must be non-empty strings
@@ -230,7 +229,7 @@ app.post('/user', (request, response) => {
 app.post('/photos/new', hasSessionRecord, (request, response) => {
 
     processFormBody(request, response, err => {
-        // Check error request:
+        // Check if request has any errors:
         if (err || !request.file) {
             console.log("Error in processing photo received from request", err);
             return;
@@ -272,15 +271,17 @@ app.post('/photos/new', hasSessionRecord, (request, response) => {
  * store the new comment in the database
  */
 app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => {
-    // don't want empty comment
-    const commentText = request.body.comment;    // new comment 
-    if (Object.keys(commentText).length === 0) { 
+    // check empty response
+    if (Object.keys(request.body).length === 0) { 
         response.status(400).json({ message: "Server: empty comment is not allowed" });
         return;
     }
 
+    const commentText = request.body.comment;    // new comment 
+    const photoID = request.params.photo_id;     // photo's id
+
     // find the photo being commented: comment's photo_id and photo's _id is the same
-    Photo.findOne({ _id: new ObjectId(request.params.photo_id) })
+    Photo.findOne({ _id: photoID })
          .then(photo => {
             if (!photo) {
                 // handle not found
@@ -296,8 +297,8 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, (request, response) => 
                 if (!photo.comments) photo.comments = [commentObj];
                 else photo.comments.push(commentObj);
                 photo.save();
-                response.status(200).send(); // send back succeed response
                 console.log("** Server: a new comment added! **");
+                response.status(200).send(); // send back succeed response
             }
          })
          .catch(error => {
@@ -432,10 +433,7 @@ function formatDateTime(dateTimeString) {
     return dateTimeFormat.format(dateTime);
 }
 
-/*
- * Jian Zhong
- * URL /user/:id - Return the information for User (id)
- */
+
 app.get('/user/:id', hasSessionRecord, function (request, response) {
     /**
      * Finding a single user from user's ID
@@ -452,42 +450,14 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
                 const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
                 delete userObj.__v;                               // remove unnecessary property
                 userObj.logged_user_first_name = request.session.sessionUserFirstName; // save logged user first name for TopBar
+                userObj.logged_user_last_name = request.session.sessionUserLastName;
+                userObj.logged_user_id = request.session.sessionUserID;
                 console.log(`** Server: login user's first name: ${userObj.logged_user_first_name} found! **`);
-
-                // Get most recent photo and most commented photo
-                Photo.find( {user_id: userID}, (err, photosData) => {
-                    if (err) {
-                        response.status(400).json({ message: `Photos for user with id ${userID}: Not Found` });
-                    } else {
-                        const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
-
-                        // get the most recent uploaded photo
-                        photos.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime()); // sort photos in a descending order by date
-                        if (photos.length > 0) {
-                            userObj.mostRecentPhotoName = photos[0].file_name;
-                            userObj.mostRecentPhotoDate = formatDateTime(photos[0].date_time);
-                        }
-
-                        // get the most commented photo
-                        photos.sort((a, b) => b.comments.length - a.comments.length);
-                        if (photos.length > 0) {
-                            userObj.mostCommentedPhotoName = photos[0].file_name;
-                            userObj.commentsCount = photos[0].comments.length;
-                        }
-                        // response the data back to the frontend browser
-                        // BUG: can't solve this bug so needed to split this app.get() method into 
-                        //  app.get('/author/:id')  and   
-                        //  app.get('/user/:id')    for the sake of my time.
-                        response.status(200).json(userObj); // return user detail INCLUDING recent photo and most commented photo
-                    }
-                });
-
-
+                response.status(200).json(userObj); // response the data back to the frontend browser
             }
         })
         .catch(error => {
-            console.log(`** From "/user/:id": User ${userID}: Not Found! **`);
-            console.log("Error: ", error.message);
+            console.log(`** From "/user/:id": User ${userID}: Not Found! **`,  error.message);
             response.status(400).json({ message: error.message });
         });
 });
@@ -495,37 +465,98 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
 
 /*
  * Jian Zhong
- * URL /author/:id - Return the information for User (id)
- * used by <userPhotos/> react component only
+ * URL /user/:id - Return the information for User (id)
+ * Used by userDetail.jsx
  */
-app.get('/author/:id', hasSessionRecord, function (request, response) {
-    /**
-     * Finding a single user from user's ID
-     */
-    console.log("calling /author/:id");
+app.get('/user2/:id', hasSessionRecord, async function (request, response) {
     const userID = request.params.id;
+  
+    try {
+      const user = await User.findOne({ _id: userID });
+  
+      // handle not user found
+      if (!user) {
+        console.log(`** User of ${userID}: Not Found! **`);
+        return response.status(404).json({ message: `User not found` });
+      }
+  
+      // handle found user
+      const userObj = JSON.parse(JSON.stringify(user)); // Convert Mongoose object to a plain JavaScript object
+      delete userObj.__v; // remove unnecessary property
+      userObj.logged_user_first_name = request.session.sessionUserFirstName; // save logged user first name for TopBar
+      userObj.logged_user_last_name = request.session.sessionUserLastName;
+      userObj.logged_user_id = request.session.sessionUserID;
+      console.log(`** Server: login user: ${userObj.logged_user_first_name} found! **`);
+  
+      // Get most recent photo and most commented photo
+      const photosData = await Photo.find({ user_id: userID });
 
-    User.findOne({_id: userID})
-        .then(user => {
-            if (!user) {
-                // handle not found
-                console.log(`** User ${userID}: Not Found! **`);
-            } else {
-                // handle found
-                const userObj = JSON.parse(JSON.stringify(user)); // convert mongoose data to JS data
-                delete userObj.__v;                               // remove unnecessary property
-                userObj.logged_user_first_name = request.session.sessionUserFirstName; // save logged user first name for TopBar
-                console.log(`** Server: login user's first name: ${userObj.logged_user_first_name} found! **`);
-                // response the data back to the frontend browser
-                response.status(200).json(userObj); // return user detail WITHOUT recent photo and most commented photo
+      // handle not photo found
+      if (!photosData) {
+        console.log(`** Photo of from userID ${userID}: Not Found! **`);
+        return response.status(404).json({ message: `Photo not found` });
+      }
+
+      // handle found photo
+      const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
+  
+      // get the most recent uploaded photo
+      photos.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime()); // sort photos in a descending order by date
+      if (photos.length > 0) {
+        userObj.mostRecentPhotoName = photos[0].file_name;
+        userObj.mostRecentPhotoDate = formatDateTime(photos[0].date_time);
+      }
+  
+      // get the most commented photo
+      photos.sort((a, b) => b.comments.length - a.comments.length);
+      if (photos.length > 0) {
+        userObj.mostCommentedPhotoName = photos[0].file_name;
+        userObj.commentsCount = photos[0].comments.length;
+      }
+  
+      // response the data back to the frontend browser
+      response.status(200).json(userObj); // retuen user detail INCLUDING recent photo and most commented photo
+    } catch (error) {
+      console.log(`** From "/user/:id": User ${userID}: Not Found! **`);
+      console.log("Error: ", error.message);
+      response.status(500).json({ message: "Internal Server Error" });
+    }
+  });
+
+
+
+ /** 
+ * * Constructing each photo's like object: 
+ * */
+function processPhotoLike(photos, response) {
+
+    let processedPhotos = 0; // reset processed photos count for like object
+
+    photos.forEach(photo => {
+        async.eachOf(photo.likes, (liked_user_id, index, done_callback) => {
+            // For each like in photo's lieks list, use liked_user_id property to find user object in Mongoose database
+            User.findOne( {_id: liked_user_id}, (error, user) => {
+                if (!error) {
+                    const userObj = JSON.parse(JSON.stringify(user)); // parse retrieved Mongoose user data
+                    const {location, description, occupation, __v, password_digest, salt, login_name, ...rest} = userObj; // only keep (_id, first_name, last_name) properties
+                    photo.likes[index] = rest;      // update the user obj to each comment's user property. 
+                }
+                done_callback(error);  // this function will execute after all like items in likes list are processed (the third argument)
+            });
+        }, err => {
+            processedPhotos += 1; // the callback functon only get called once after all items have been processed.
+            if (err) {
+                response.status(400).json({ message: "Error occured in finding likes under a photo" });
+                return;
             }
-        })
-        .catch(error => {
-            console.log(`** From "/user/:id": User ${userID}: Not Found! **`);
-            console.log("Error: ", error.message);
-            response.status(400).json({ message: error.message });
-        });
-});
+            if (processedPhotos === photos.length) {
+                // All photos comments and likes processed!
+                response.status(200).json(photos); // Send the response only when all processing is done
+            }
+        }); // end of "async.eachOf()"
+    });
+}
+
 
 
 /**
@@ -540,50 +571,111 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
      */
     Photo.find( {user_id: id}, (err, photosData) => {
         if (err) {
-            response.status(400).json({ message: `Photos for user with id ${id}: Not Found` });
-        } else {
-            console.log(`** Server: found /photosOfUser/${id} Successfully! **`);
-            let count = 0;                                        // count the number of processed photos 
-            const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
-
-            // sort photos in a descending order
-            photos.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime());
-
-            // For each photo in photos list:
-            photos.forEach(photo => {
-                delete photo.__v;  // remove the unnessary property before sending to client 
-                photo.date_time = formatDateTime(photo.date_time);  // make date time of each photo more readable
-
-                /**
-                 * * To fecth multiple modules, need to use async.eachOf().
-                 * Since each commment under photo contains only user_id property, 
-                 * so need to find comment text from user_id, and create each commment object
-                 */
-                async.eachOf(photo.comments, (comment, index, done_callback) => {
-                    // For each comment in comments list, use user_id property to find user object in Mongo database
-                    User.findOne( {_id: comment.user_id}, (error, user) => {
-                        if (!error) {
-                            const userObj = JSON.parse(JSON.stringify(user)); // parse retrieved Mongoose user data
-                            const {location, description, occupation, __v, ...rest} = userObj; // only keep (_id, first_name, last_name) properties
-                            photo.comments[index].user = rest;      // update the user obj to each comment's user property.
-                            delete photo.comments[index].user_id;   // remove unnessary property for each comment
-                        }
-                        done_callback(error);
-                    });
-                }, error => {
-                    count += 1;
-                    if (error) {
-                        response.status(400).json({ message: "Error occured in finding commments under a photo" });
-                    } else if (count === photos.length) {
-                        // Response to client only after aysnc.each() has processed all Photos in photoList.
-                        response.status(200).json(photos);  // Response to client, finally!
-                    }
-                }); // end of "async.eachOf(photo.comments,)"
-            }); // end of "photoList.forEach(photo)"
+            response.status(400).json({ message: `Photos with user id ${id}: Not Found` });
+            return;
         }
+
+        console.log(`** Server: found /photosOfUser/${id} Successfully! **`);
+        const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
+        photos.sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime()); // sort photo by date in descending order first
+
+        /**
+         * * Start constructing each photo's comment object
+         * * Since each photo has a list of comments with opeartions, so use async.eachOf() 
+         * * to do the operations for each comment asynchronously.
+         * Since each commment under photo contains only user_id property, 
+         * so need to find comment text from user_id, and create each commment object
+         */
+        // For each photo in photos list:
+        let processedPhotos = 0;                                        // count the number of processed photos 
+        photos.forEach(photo => {
+            delete photo.__v;  // remove the unnessary property before sending to client 
+            photo.date_time = formatDateTime(photo.date_time);  // make date time of each photo more readable
+
+            /**
+             * * Start constructing each photo's comment object
+             * * Since each photo has a list of comments with opeartions, so use async.eachOf() 
+             * * to do the operations for each comment asynchronously.
+             * Since each commment under photo contains only user_id property, 
+             * so need to find comment text from user_id, and create each commment object
+             */
+            async.eachOf(photo.comments, (comment, index, done_callback) => {
+                // For each comment in comments list, use user_id property to find user object in Mongoose database
+                User.findOne( {_id: comment.user_id}, (error, user) => {
+                    if (!error) {
+                        const userObj = JSON.parse(JSON.stringify(user)); // parse retrieved Mongoose user data
+                        const {location, description, occupation, __v, ...rest} = userObj; // only keep (_id, first_name, last_name) properties
+                        photo.comments[index].user = rest;      // update the user obj to each comment's user property.
+                        delete photo.comments[index].user_id;   // remove unnessary property for each comment
+                    }
+                    done_callback(error);
+                });
+            }, err1 => {
+                processedPhotos += 1; // count increases by 1 when each entire photo's likes list is all done.
+                if (err1) { 
+                    response.status(400).json({ message: "Error occured in finding commments under a photo" });
+                    return;
+                }
+                if (processedPhotos === photos.length) { // when all photos' likes lists are done, response back to the server.
+                    processPhotoLike(photos, response);
+                }
+            }); // end of "async.eachOf()"
+        }); // end of "photoList.forEach()"
     });    
 });
 
+
+/**
+ * * Jian Zhong 
+ * * URL /updatePhotoLikes/:photo_id - response to like update
+ */
+app.post('/updatePhotoLikes/:photo_id', (request, response) => {
+    // check empty response
+    if (Object.keys(request.body).length === 0) { 
+        response.status(400).json({ message: "Server: empty comment is not allowed" });
+        return;
+    }
+
+    const photoID = request.params.photo_id; // like which photo
+    const userID = request.body.action;      // like action by which user 
+
+    Photo.findOne({ _id: photoID })
+         .then(photo => {
+            // handle not found
+            if (!photo) {
+                response.status(400).json({ message: "Server: Photo you just commented is not found" });
+            }
+
+            // handle found photo
+            if (photo.likes.includes(userID)) { // when hitting a liked photo
+                // Remove an item from the original list (no copy)
+                // * Since you are modifying the array in place, Mongoose is more likely to detect 
+                // * this as a change to the photo object, and the change will persist when you call photo.save().
+                let indexToRemove = photo.likes.indexOf(userID);
+                if (indexToRemove !== -1) {
+                    photo.likes.splice(indexToRemove, 1);
+                }
+
+                // ! Why this filter() doesn't work ???????????????????????????????????????????? (OK)
+                // photo.likes = photo.likes.filter(id => id !== userID); // remove the user id
+                // * MongoDB's update operation didn't handle the array replacement correctly
+                // * MongoDB recommands modifying the original array to work correctly.
+                // * When you directly assign a new array to photo.likes, Mongoose might not detect 
+                // * this as a change to the photo object, 
+                // * and therefore the change might not persist when you call photo.save().
+            } else {                           // when hitting a non-liked photo
+                photo.likes.push(userID);
+            }
+
+            console.log(`** Server: ${userID} clicked like button! **`);
+            photo.save();
+            response.status(200).json({ message: "Like updated successfully!" }); // send back succeed response
+        })
+         .catch(error => {
+            response.status(400).json({ message: "Other error occured: " });
+            console.error('Server: Error Updating like info', error);
+         });
+});
 
 
 var server = app.listen(3000, () => {
