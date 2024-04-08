@@ -75,7 +75,7 @@ function UserPhotos(props) {
 
   const handleLikeClick = photo_id => {
     // reflect user's like action to the server
-    axios.post(`/updatePhotoLikes/${photo_id}`, {action: props.loginUser.id}) // send new like action to server
+    axios.post(`/like/${photo_id}`, {action: props.loginUser.id}) // send new like action to server
          .then(() => {
            // use axios to get user's photos, therefore updating like buttons for all photos.
            axios_fetch_photos(props.match.params.userId);

@@ -654,7 +654,7 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
  * * Jian Zhong 
  * * URL /updatePhotoLikes/:photo_id - response to like update
  */
-app.post('/updatePhotoLikes/:photo_id', (request, response) => {
+app.post('/like/:photo_id', (request, response) => {
     // check empty response
     if (Object.keys(request.body).length === 0) { 
         response.status(400).json({ message: "Server: empty comment is not allowed" });
@@ -709,6 +709,78 @@ app.post('/updatePhotoLikes/:photo_id', (request, response) => {
             console.error('Server: Error Updating like info', error);
          });
 });
+
+
+app.post('/deleteUser/:id', async (request, response) => {
+    const userIdToRemove = request.params.id;
+    console.log("User to remove: " + userIdToRemove);
+
+    try {
+
+        // Delete the [User]
+        const result = await User.findByIdAndDelete(userIdToRemove);
+        console.log('Deleted the User: ', result);
+
+        // Delete all [Photos] posted by the user
+        const userPhotos = await Photo.find({ user_id: userIdToRemove }); // all photos posted by the user
+        const deletionPromises = userPhotos.map(async (photo) => {
+            const deletedPhoto = await Photo.findByIdAndDelete(photo._id);
+            console.log('Deleted Photo:', deletedPhoto);
+        });
+        await Promise.all(deletionPromises); // Await all deletion promises to complete
+
+
+        // Delete all [Likes] and [Comments] by the deleted user from all related photos
+        let updatedPhoto;
+        let countLikes = 0;
+        let countComments = 0;
+        const allPhotos = await Photo.find(); // collect all the rest phots
+        const updatePromises = allPhotos.map(async (photo) => {
+
+            // delete all deleted user's likes in each photo
+            if (photo.likes.includes(userIdToRemove)) {
+                countLikes += 1;
+                updatedPhoto = await Photo.findByIdAndUpdate(photo._id, {$pull: { likes: userIdToRemove }}, { new: true }); // To return the updated document
+            }
+
+            // delete all deleted user's comments in each photo
+            // * Fixed bug: new ObjectId type is not the same as String type even they have the same value!!!!!
+            const commentsToDelete = photo.comments.filter(comment => comment.user_id.toString() === userIdToRemove); // see if any photo has comment by the deleted user
+            const commentUpdatePromises = commentsToDelete.map(async (commentToDelete) => {
+                countComments += 1;
+                updatedPhoto = await Photo.findByIdAndUpdate(photo._id, {$pull: { comments: commentToDelete }}, { new: true });
+            });
+
+            // Combine all comment deletion promises for this photo
+            const combinedPromises = updatedPhoto ? [updatedPhoto, ...commentUpdatePromises] : commentUpdatePromises;
+            return combinedPromises;
+        });
+
+        // Flatten the array of arrays into a single array of promises
+        const flattenedPromises = updatePromises.flat();
+        // Await all deletion promises to complete
+        await Promise.all(flattenedPromises); 
+        
+        console.log("Total comments length: ", countComments);
+        console.log("Total likes to delete: ", countLikes);
+        
+
+        const allPhotos2 = await Photo.find();
+        const comments_to_print = allPhotos2.map(async photo => photo.comments);
+        await Promise.all(comments_to_print); 
+        console.log("Updated all photos: ");
+        console.log(comments_to_print);
+
+        response.status(200).json({ message: "User deleted successfully!" });
+
+
+    } catch(error) {
+        console.error('Error destroying User:', error.message);
+        response.status(500).json({ message: 'Internal server error' });
+    }
+
+});
+
 
 
 var server = app.listen(3000, () => {

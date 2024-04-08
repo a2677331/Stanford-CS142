@@ -10,6 +10,7 @@ import {
 import "./TopBar.css";
 import axios from "axios";
 import { CloudUpload, ExitToApp, AddAPhotoOutlined, CloseRounded } from "@material-ui/icons";
+import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 
 
 
@@ -69,14 +70,6 @@ function TopBar(props) {
       axios_fetchVersion();
     }
   }, []); // []: only want to fetch version once, not every render
-  
-
-
-  // Handle user log out
-  const handleLogOut = () => {
-    // Use Axios to send POST request to log out user.
-    axios_logoutUser();
-  };
 
   /**
    * Handle image file: read the uploaded photo file and set it to "uploadInput" state variable
@@ -110,21 +103,27 @@ function TopBar(props) {
 
   // close snackbar when clickaway or openSnackbar is false.
   const handleClose = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
-    }
+    if (reason === 'clickaway') return;
     setOpenSnackBar(false);
   };
-
-  // show snackbar when logout button is clicked on login page
-  const handleOnClick = () => { 
-    setOpenSnackBar(true);
-  };
+  
 
   // Actions for logout account button: will log out user and display prompt for user to log in
-  const handleButtonClick = () => {
-    handleLogOut();
-    handleOnClick();
+  const handleLogout = () => {
+    axios_logoutUser();    // Use Axios to send POST request to log out user.
+    setOpenSnackBar(true); // show snackbar when logout button is clicked on login page
+  };
+
+  const handleDeleteClick = () => {
+    axios
+      .post(`/deleteUser/${props.loginUser.id}`)
+      .then(response => {
+        if (response.status === 200) {
+          console.log("** TopBar: Delete Account OK **");
+          handleLogout();
+        }
+      })
+      .catch(err => console.log("Delete account error: ", err.message));
   };
 
   // Rendering Components:
@@ -184,8 +183,13 @@ function TopBar(props) {
         )}
 
         {/* Log Out Button */}
-        <IconButton title="Log out your account" onClick={handleButtonClick} variant="contained" >
+        <IconButton title="Log out your account" onClick={handleLogout} variant="contained" >
           <ExitToApp style={{ color: "#e16162" }} fontSize="large" />
+        </IconButton>
+
+        {/* Account Delete Button */}
+        <IconButton title="Delete your account forever" onClick={handleDeleteClick} variant="contained" >
+          <DeleteForeverIcon style={{ color: "red" }} fontSize="large" />
         </IconButton>
 
         {/* to prompt user when already logged out */}
