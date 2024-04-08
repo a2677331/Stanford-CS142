@@ -716,7 +716,6 @@ app.post('/deleteUser/:id', async (request, response) => {
     console.log("User to remove: " + userIdToRemove);
 
     try {
-
         // Delete the [User]
         const result = await User.findByIdAndDelete(userIdToRemove);
         console.log('Deleted the User: ', result);
@@ -730,55 +729,35 @@ app.post('/deleteUser/:id', async (request, response) => {
         await Promise.all(deletionPromises); // Await all deletion promises to complete
 
 
-        // Delete all [Likes] and [Comments] by the deleted user from all related photos
+        // Delete all [Likes] and [Comments] by the user from all related photos
         let updatedPhoto;
-        let countLikes = 0;
-        let countComments = 0;
         const allPhotos = await Photo.find(); // collect all the rest phots
         const updatePromises = allPhotos.map(async (photo) => {
-
             // delete all deleted user's likes in each photo
             if (photo.likes.includes(userIdToRemove)) {
-                countLikes += 1;
                 updatedPhoto = await Photo.findByIdAndUpdate(photo._id, {$pull: { likes: userIdToRemove }}, { new: true }); // To return the updated document
             }
-
             // delete all deleted user's comments in each photo
-            // * Fixed bug: new ObjectId type is not the same as String type even they have the same value!!!!!
+            // * Fixed bug: comment.user_id is new ObjectId type, 
+            // * and it is not the same as String type even they have the same value!!!!!
             const commentsToDelete = photo.comments.filter(comment => comment.user_id.toString() === userIdToRemove); // see if any photo has comment by the deleted user
             const commentUpdatePromises = commentsToDelete.map(async (commentToDelete) => {
-                countComments += 1;
                 updatedPhoto = await Photo.findByIdAndUpdate(photo._id, {$pull: { comments: commentToDelete }}, { new: true });
             });
-
             // Combine all comment deletion promises for this photo
             const combinedPromises = updatedPhoto ? [updatedPhoto, ...commentUpdatePromises] : commentUpdatePromises;
             return combinedPromises;
         });
 
-        // Flatten the array of arrays into a single array of promises
-        const flattenedPromises = updatePromises.flat();
-        // Await all deletion promises to complete
-        await Promise.all(flattenedPromises); 
-        
-        console.log("Total comments length: ", countComments);
-        console.log("Total likes to delete: ", countLikes);
-        
-
-        const allPhotos2 = await Photo.find();
-        const comments_to_print = allPhotos2.map(async photo => photo.comments);
-        await Promise.all(comments_to_print); 
-        console.log("Updated all photos: ");
-        console.log(comments_to_print);
-
+        // Await all deletion promises to complete and return to front-end
+        const flattenedPromises = updatePromises.flat(); // Flatten the array of arrays into a single array of promises
+        await Promise.all(flattenedPromises);  
         response.status(200).json({ message: "User deleted successfully!" });
-
-
     } catch(error) {
         console.error('Error destroying User:', error.message);
         response.status(500).json({ message: 'Internal server error' });
     }
-
+    
 });
 
 

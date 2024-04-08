@@ -6,6 +6,11 @@ import {
   Button,
   IconButton,
   Snackbar,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@material-ui/core";
 import "./TopBar.css";
 import axios from "axios";
@@ -21,7 +26,11 @@ import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 function TopBar(props) {
   const [version, setVersion] = useState(null);             // the app version
   const [uploadInput, setUploadInput] = useState(null);     // photo upload input
-  const [openSnackBar, setOpenSnackBar] = useState(null);   // control snackbar open or not
+  const [logoutPrompt, setlogoutPrompt] = useState(null);   // control snackbar open or not
+  
+  const [alertPromptOpen, setAlertPromptOpen] = useState(false); // alert prompt
+  const handleAlertOpen = () => setAlertPromptOpen(true);
+  const handleAlertClose = () => setAlertPromptOpen(false);
 
   // use Axios to send GET request to server to load the version variable.
   const axios_fetchVersion = () => {
@@ -102,25 +111,26 @@ function TopBar(props) {
 
 
   // close snackbar when clickaway or openSnackbar is false.
-  const handleClose = (event, reason) => {
+  const handleLogoutPromptClose = (event, reason) => {
     if (reason === 'clickaway') return;
-    setOpenSnackBar(false);
+    setlogoutPrompt(false);
   };
   
 
   // Actions for logout account button: will log out user and display prompt for user to log in
-  const handleLogout = () => {
+  const handleLogoutPromptClick = () => {
     axios_logoutUser();    // Use Axios to send POST request to log out user.
-    setOpenSnackBar(true); // show snackbar when logout button is clicked on login page
+    setlogoutPrompt(true); // show snackbar when logout button is clicked on login page
   };
 
   const handleDeleteClick = () => {
+    setAlertPromptOpen(false);      // close the alert prompt
     axios
       .post(`/deleteUser/${props.loginUser.id}`)
       .then(response => {
         if (response.status === 200) {
           console.log("** TopBar: Delete Account OK **");
-          handleLogout();
+          handleLogoutPromptClick(); // after deleting user account, need to log out the user.
         }
       })
       .catch(err => console.log("Delete account error: ", err.message));
@@ -183,27 +193,55 @@ function TopBar(props) {
         )}
 
         {/* Log Out Button */}
-        <IconButton title="Log out your account" onClick={handleLogout} variant="contained" >
-          <ExitToApp style={{ color: "#e16162" }} fontSize="large" />
-        </IconButton>
+        <React.Fragment>
+          {/* Logout button and styles */}
+          <IconButton title="Log out your account" onClick={handleLogoutPromptClick} variant="contained" >
+            <ExitToApp style={{ color: "#e16162" }} fontSize="large" />
+          </IconButton>
+          {/* to prompt user when already logged out */}
+          <Snackbar
+            open={logoutPrompt}
+            onClose={handleLogoutPromptClose}
+            autoHideDuration={5000}
+            message="You are currently logged out."
+            action={(
+              <IconButton color="secondary" onClick={handleLogoutPromptClose}>
+                <CloseRounded />
+              </IconButton>
+            )}
+          />
+        </React.Fragment>
+
 
         {/* Account Delete Button */}
-        <IconButton title="Delete your account forever" onClick={handleDeleteClick} variant="contained" >
-          <DeleteForeverIcon style={{ color: "red" }} fontSize="large" />
-        </IconButton>
-
-        {/* to prompt user when already logged out */}
-        <Snackbar
-          open={openSnackBar}
-          autoHideDuration={5000}
-          onClose={handleClose}
-          message="You are currently logged out."
-          action={(
-            <IconButton color="secondary" onClick={handleClose}>
-              <CloseRounded />
+        {props.loginUser && (
+          <React.Fragment> 
+            {/* button for deleting the user account */}
+            <IconButton title="Delete your account forever" onClick={handleAlertOpen} variant="contained" >
+              <DeleteForeverIcon style={{ color: "red" }} fontSize="large" />
             </IconButton>
-          )}
-        />
+            {/* alert prompt */}
+            <Dialog
+              open={alertPromptOpen}
+              onClose={handleAlertClose}
+              aria-labelledby="alert-dialog-title"
+              aria-describedby="alert-dialog-description"
+            >
+              <DialogTitle id="alert-dialog-title">
+                {"Deleting an Account"}
+              </DialogTitle>
+              <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                  {`Delete ${props.loginUser.first_name} ${props.loginUser.last_name}'s account?`}
+                </DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleAlertClose} autoFocus color="primary" variant="contained">Cancel</Button>
+                <Button onClick={handleDeleteClick} color="secondary">Delete</Button>
+              </DialogActions>
+            </Dialog>
+          </React.Fragment>
+        )}
 
       </Toolbar>
     </AppBar>
