@@ -168,7 +168,8 @@ function UserPhotos(props) {
                       </Link>
                     )}
                     subheader={photo.date_time} 
-                    action={(
+                    action={props.loginUser.id === user._id && (
+                      // Button for removing eacb photo
                       <IconButton title="Remove the photo" onClick={() => handlePhotoDelete(photo._id)}>
                         <DeleteOutlineIcon />
                       </IconButton>
@@ -216,11 +217,15 @@ function UserPhotos(props) {
                           color="textSecondary"
                           gutterBottom
                         >
-                          {convertDate(c.date_time)} 
-                          {/* Remove button for each comment */}
-                          <IconButton title="Delete the comment" onClick={() => handleCommentDetele(c._id, photo._id)}>
-                            <DeleteOutlineIcon fontSize="small"  />
-                          </IconButton>
+                          {convertDate(c.date_time)}
+
+                          {/* Button for removing each comment */}
+                          {props.loginUser.id === user._id && (
+                            <IconButton title="Delete the comment" onClick={() => handleCommentDetele(c._id, photo._id)}>
+                              <DeleteOutlineIcon fontSize="small"  />
+                            </IconButton>
+                          )}
+
                         </Typography>
                         <Typography variant="body1">
                           {`"${c.comment}"`}

@@ -19,7 +19,6 @@
 /**
  * Setup Mongoose database and connect:
  */
-var ObjectId = require('mongodb').ObjectId; 
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 mongoose.connect('mongodb://127.0.0.1/cs142project6', { useNewUrlParser: true, useUnifiedTopology: true });

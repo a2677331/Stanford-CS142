@@ -62,10 +62,10 @@ function UserList(props) {
 
   // The user list only displays if the current user is logged in
   if (users && props.loginUser) {
-    userList = users.map((usr, index) => (
+    userList = users.map((user, index) => (
       <React.Fragment key={index}>
         <ListItem
-          to={`/users/${usr._id}`} 
+          to={`/users/${user._id}`} 
           component={Link} onClick={() => handleClick(index)}
           button
           style={{ backgroundColor: selectedButtonIndex === index ? "#004643" : "",
@@ -77,7 +77,9 @@ function UserList(props) {
             <ListItemIcon><Person fontSize="large" style={{ color: "#ffff" }}/></ListItemIcon> :
             <ListItemIcon><PersonOutlineOutlined fontSize="large" /></ListItemIcon>
           }
-            <ListItemText primary={<Typography variant="h6">{`${usr.first_name} ${usr.last_name}`}</Typography>} />
+            <ListItemText primary={
+              <Typography variant="h6">{user.first_name +  " " + user.last_name + (props.loginUser.id === user._id ? " (Me)" : "")}</Typography>
+            } />
         </ListItem>
         <Divider />
       </React.Fragment>
