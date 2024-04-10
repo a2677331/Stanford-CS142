@@ -61,8 +61,10 @@ function UserPhotos(props) {
    * @param props.photoIsUploaded: if a new photo was updated
    */
   useEffect(() => { 
-    axios_fetch_user(props.match.params.userId);
-    axios_fetch_photos(props.match.params.userId);
+    if (props.match.params.userId) {
+      axios_fetch_user(props.match.params.userId);
+      axios_fetch_photos(props.match.params.userId);
+    }
   }, [props.photoIsUploaded, props.match.params.userId]);
 
   /**
@@ -142,118 +144,130 @@ function UserPhotos(props) {
   };
 
   
-    // * Note: need to add "|| !user || !photos",
-    // * so that after redirecting to another page, user and photos
-    // * won't be accessed on another page,
-    // * else it will cause unmount error in browser's console
-    if (props.loginUser || !user || !photos) {
-      // If there is user photo, then display user photos
-      return ( photos && user && (
-          <Grid container justifyContent="flex-start" spacing={3}>
-            {/* Loop through all the photos, if user has posted photos */}
-            {photos.length > 0 && photos.map(photo => (
-              // Each photo's layout
-              <Grid item xs={4} key={photo._id}>
-                <Card style={{ border: "1px solid black" }}>
-                  {/* Each photo's author avatar, name, post date, and delete button */}
-                  <CardHeader
-                    avatar={(
-                      <Avatar style={{ backgroundColor: "#FF7F50", border: "1px solid black" }}>
-                        {user.first_name[0]}
-                      </Avatar>
-                    )}
-                    title={(
-                      <Link to={`/users/${user._id}`}>
-                        <Typography>{`${user.first_name} ${user.last_name}`}</Typography>
-                      </Link>
-                    )}
-                    subheader={photo.date_time} 
-                    action={props.loginUser.id === user._id && (
-                      // Button for removing eacb photo
-                      <IconButton title="Remove the photo" onClick={() => handlePhotoDelete(photo._id)}>
-                        <DeleteOutlineIcon />
-                      </IconButton>
-                    )}
-                  />
-                  {/* Each photo's filename */}
-                  <CardMedia
-                    component="img"
-                    image={`./images/${photo.file_name}`}
-                    alt="Anthor Post"
-                  />
-                  {/* Like by users Info */}
-                  <Typography variant="button" style={{ marginLeft: "6px", textTransform: "none"}}>
-                    {photo.likes.length > 0 ?
-                    `Liked by ${likesNameList(photo).map(name => name).join(", ")}` : ``}
-                  </Typography>
-                  <CardActions style={{ paddingBottom: "0" }}>
-                    {/* Like button */}
-                    <Button onClick={() => handlePhotoLike(photo._id)} style={{ margin: "0 auto" }}>
-                      {likedByLoginUser(photo) ? 
-                      <ThumbUp color="secondary" /> : <ThumbUpOutlined color="action" />}
-                      <Typography variant="button" style={{ marginLeft: "5px"}} >
-                        {photo.likes.length}
-                      </Typography>
-                    </Button>
-                  </CardActions>
-                  {/* Comments' layout */}
-                  <CardContent style={{ paddingTop: "0" }}>
-                    {/* Loop through all comments under the photo */}
-                    {photo.comments && (
-                      <Typography variant="subtitle1">
-                        Comments:
-                        <Divider/>
-                      </Typography>
-                    )}
-                    {photo.comments.map(c => (
-                      <List key={c._id}>
-                        <Typography variant="subtitle2">
-                          <Link to={`/users/${c.user._id}`}>
-                            {`${c.user.first_name} ${c.user.last_name}`}
-                          </Link>
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="textSecondary"
-                          gutterBottom
-                        >
-                          {convertDate(c.date_time)}
+  // * Note: need to add "|| !user || !photos",
+  // * so that after redirecting to another page, user and photos
+  // * won't be accessed on another page,
+  // * else it will cause unmount error in browser's console
+  // * Note: need to add "|| !user || !photos",
+  if (props.loginUser || !user || !photos) {
 
-                          {/* Button for removing each comment */}
-                          {props.loginUser.id === user._id && (
-                            <IconButton title="Delete the comment" onClick={() => handleCommentDetele(c._id, photo._id)}>
-                              <DeleteOutlineIcon fontSize="small"  />
-                            </IconButton>
-                          )}
+    console.log("Photos: ", photos);
+    console.log("User: ", user);
 
-                        </Typography>
-                        <Typography variant="body1">
-                          {`"${c.comment}"`}
-                        </Typography>
-                      </List>
-                    ))}
-                    {/* Comment dialog box */}
-                    <CommentDialog
-                      onCommentSumbit={handleCommentSumbit}
-                      photo_id={photo._id}
-                    />
-                  </CardContent>
-                </Card>
+    /* If there is user photo, then display user photos */
+    return (photos && user && (
+        <Grid container justifyContent="flex-start" spacing={3}>
+
+          {/* Loop through all the photos, if user has posted photos */}
+          {photos.length > 0 && photos.map(photo => (
+            /* Each photo's layout */
+            <Grid item xs={4} key={photo._id}>
+              <Card style={{ border: "1px solid black" }}>
+                {/* Each photo's author avatar, name, post date, and delete button */}
+                <CardHeader
+                  avatar={(
+                    <Avatar style={{ backgroundColor: "#FF7F50", border: "1px solid black" }}>
+                      {user.first_name[0]}
+                    </Avatar>
+                  )}
+                  title={(
+                    <Link to={`/users/${user._id}`}>
+                      <Typography>{`${user.first_name} ${user.last_name}`}</Typography>
+                    </Link>
+                  )}
+                  subheader={photo.date_time} 
+                  action={props.loginUser.id === user._id && (
+                    // Button for removing eacb photo
+                    <IconButton title="Remove the photo" onClick={() => handlePhotoDelete(photo._id)}>
+                      <DeleteOutlineIcon />
+                    </IconButton>
+                  )}
+                />
+                {/* Each photo's filename */}
+                <CardMedia
+                  component="img"
+                  image={`./images/${photo.file_name}`}
+                  alt="Anthor Post"
+                />
+                {/* Like by users Info */}
+                <Typography variant="button" style={{ marginLeft: "6px", textTransform: "none"}}>
+                  {photo.likes.length > 0 ?
+                  `Liked by ${likesNameList(photo).map(name => name).join(", ")}` : ``}
+                </Typography>
+                <CardActions style={{ paddingBottom: "0" }}>
+                  {/* Like button */}
+                  <Button onClick={() => handlePhotoLike(photo._id)} style={{ margin: "0 auto" }}>
+                    {likedByLoginUser(photo) ? 
+                    <ThumbUp color="secondary" /> : <ThumbUpOutlined color="action" />}
+                    <Typography variant="button" style={{ marginLeft: "5px"}} >
+                      {photo.likes.length}
+                    </Typography>
+                  </Button>
+                </CardActions>
+                {/* Comments' layout */}
+                <CardContent style={{ paddingTop: "0" }}>
+                  {/* Loop through all comments under the photo */}
+                  {photo.comments && (
+                    <Typography variant="subtitle1">
+                      Comments:
+                      <Divider/>
+                    </Typography>
+                  )}
+                  {photo.comments.map(c => (
+                    <List key={c._id}>
+                      <Typography variant="subtitle2">
+                        <Link to={`/users/${c.user._id}`}>
+                          {`${c.user.first_name} ${c.user.last_name}`}
+                        </Link>
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="textSecondary"
+                        gutterBottom
+                      >
+                        {convertDate(c.date_time)}
+                        {/* Button for removing each comment */}
+                        {props.loginUser.id === user._id && (
+                          <IconButton title="Delete the comment" onClick={() => handleCommentDetele(c._id, photo._id)}>
+                            <DeleteOutlineIcon fontSize="small"  />
+                          </IconButton>
+                        )}
+                      </Typography>
+                      <Typography variant="body1">
+                        {`"${c.comment}"`}
+                      </Typography>
+                    </List>
+                  ))}
+                  {/* Comment dialog box */}
+                  <CommentDialog
+                    onCommentSumbit={handleCommentSumbit}
+                    photo_id={photo._id}
+                  />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+
+          {/* Display a prompt if user has NOT yet posted any photos */}
+          {photos.length === 0 && (
+            <Grid item xs={12}>
+              {/* minHeight: "80vh": vertically center the text */}
+              <Grid container justifyContent="center" alignItems="center" style={{ minHeight: "80vh" }}>
+                <Typography>
+                  This user has not posted any photos yet.
+                </Typography>
               </Grid>
-            ))}
-            {/* Display a prompt if user has NOT yet posted any photos */}
-            {photos.length === 0 && (
-              <Typography>
-                This user has not posted any photos yet.
-              </Typography>
-            )}
-          </Grid>
-        )
-      );
-    } else {
-      return <Redirect to={`/login-register`} />;
-    }
+            </Grid>
+          )}
+
+        </Grid>
+      )
+    );
+  } else {
+    return <Redirect to={`/login-register`} />;
+  }
+
 }
 
-export default UserPhotos;
 
+export default UserPhotos;
