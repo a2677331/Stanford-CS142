@@ -478,6 +478,11 @@ app.get('/user2/:id', hasSessionRecord, async function (request, response) {
     const userID = request.params.id;
   
     try {
+      /** 
+       * * Noted: By using await, subsequent lines of code 
+       * * after the await expression will not execute 
+       * * until the awaited promise resolves or rejects.
+       */
       const user = await User.findOne({ _id: userID });
   
       // handle not user found
@@ -497,10 +502,10 @@ app.get('/user2/:id', hasSessionRecord, async function (request, response) {
       // Get most recent photo and most commented photo
       const photosData = await Photo.find({ user_id: userID });
 
-      // handle not photo found
-      if (!photosData) {
-        console.log(`** Photo of from userID ${userID}: Not Found! **`);
-        return response.status(404).json({ message: `Photo not found` });
+      // handle not photo found (user has not posted any photos yet)
+      if (photosData.length === 0) {
+        console.log(`** User has not posted any photos yet **`);
+        return response.status(200).json(userObj);
       }
 
       // handle found photo
@@ -521,11 +526,11 @@ app.get('/user2/:id', hasSessionRecord, async function (request, response) {
       }
   
       // response the data back to the frontend browser
-      response.status(200).json(userObj); // retuen user detail INCLUDING recent photo and most commented photo
+      return response.status(200).json(userObj); // retuen user detail INCLUDING recent photo and most commented photo
     } catch (error) {
       console.log(`** From "/user/:id": User ${userID}: Not Found! **`);
       console.log("Error: ", error.message);
-      response.status(500).json({ message: "Internal Server Error" });
+      return response.status(500).json({ message: "Internal Server Error" });
     }
   });
 
@@ -596,13 +601,16 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
      */
     Photo.find( {user_id: id}, (err, photosData) => {
         if (err) {
+            console.log(`Photos with user id ${id}: Not Found`);
             response.status(400).json({ message: `Photos with user id ${id}: Not Found` });
-            return;
         }
 
-        console.log(`** Server: found /photosOfUser/${id} Successfully! **`);
+        console.log(`** Server: found /photosOfUser/${id} Successfully! **`, photosData);
         const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
-        sortedPhotos(photos);       // sort photo in descending order by likes votes first, then by date
+        if (photos.length === 0) {
+            console.log("This user has no photos yet.");
+            response.status(200).json(photos);
+        }
 
         /**
          * * Start constructing each photo's comment object
@@ -612,6 +620,7 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
          * so need to find comment text from user_id, and create each commment object
          */
         // For each photo in photos list:
+        sortedPhotos(photos);       // sort photo in descending order by likes votes first, then by date
         let processedPhotos = 0;                                        // count the number of processed photos 
         photos.forEach(photo => {
             delete photo.__v;  // remove the unnessary property before sending to client 
@@ -710,7 +719,9 @@ app.post('/like/:photo_id', (request, response) => {
          });
 });
 
-
+/**
+ * Function to delete the entire user account by the user id posted
+ */
 app.post('/deleteUser/:id', async (request, response) => {
     const userIdToRemove = request.params.id;
     console.log("User to remove: " + userIdToRemove);
@@ -726,6 +737,11 @@ app.post('/deleteUser/:id', async (request, response) => {
             const deletedPhoto = await Photo.findByIdAndDelete(photo._id);
             console.log('Deleted Photo:', deletedPhoto);
         });
+        
+        /**
+         * * Noted: In cases where you want multiple asynchronous operations to run concurrently. 
+         * * In such cases, you might use Promise.all() or other approaches.
+         */
         await Promise.all(deletionPromises); // Await all deletion promises to complete
 
 
@@ -735,7 +751,7 @@ app.post('/deleteUser/:id', async (request, response) => {
         const updatePromises = allPhotos.map(async (photo) => {
             // delete all deleted user's likes in each photo
             if (photo.likes.includes(userIdToRemove)) {
-                updatedPhoto = await Photo.findByIdAndUpdate(photo._id, {$pull: { likes: userIdToRemove }}, { new: true }); // To return the updated document
+                updatedPhoto = await Photo.finByIdAndUpdate(photo._id, {$pull: { likes: userIdToRemove }}, { new: true }); // To return the updated document
             }
             // delete all deleted user's comments in each photo
             // * Fixed bug: comment.user_id is new ObjectId type, 
@@ -759,6 +775,60 @@ app.post('/deleteUser/:id', async (request, response) => {
     }
     
 });
+
+/**
+ * To delete a comment from the comment id and from a photo id.
+ */
+app.post('/deleteComment/:id', async (request, response) => {
+    const commentIdToDelete = request.params.id; // comment id to remove
+    const photoID = request.body.photo_id;       // commented photo's ID
+    
+    try {
+        // find comment obj by comment id
+        const photo = await Photo.findById(photoID);
+        if (!photo) {
+            console.log("Photo not found");
+            response.status(404).json({ message: 'Photo not found' });
+        }
+        console.log("Photo found: ", photo);
+        const commentToDelete = photo.comments.filter(comment => comment._id.toString() === commentIdToDelete);
+        if (commentToDelete.length !== 1) {
+            console.log("Comment not found");
+            response.status(404).json({ message: 'Comment not found' });
+        }
+
+        // remove the comment obj from the photo's comments list
+        const updatedPhoto = await Photo.findByIdAndUpdate(photoID, {$pull: { comments: commentToDelete[0] }}, { new: true });
+        if (updatedPhoto) {
+            console.log("Updated photo: ", updatedPhoto);
+            response.status(200).json({ message: "Comment deleted successfully!" });
+        } 
+    } catch(error) {
+        console.error('Error deleting comment:', error.message);
+        response.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+app.post('/deletePhoto/:id', async (request, response) => {
+    const photoIdToDelete = request.params.id; // photo id to remove
+    
+    try {
+        // find comment obj by comment id
+        const deleted_photo = await Photo.findByIdAndDelete(photoIdToDelete);
+        if (!deleted_photo) {
+            console.log("Photo not found");
+            response.status(404).json({ message: 'Photo not found' });
+        }
+        console.log("Photo to be deleted: ", deleted_photo);
+        response.status(200).json({ message: "Photo deleted successfully!" });
+    } catch(error) {
+        console.error('Error deleting comment:', error.message);
+        response.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
 
 
 

@@ -12,7 +12,9 @@ import {
   CardContent,
   CardActions,
   Button,
+  IconButton,
 } from "@material-ui/core";
+import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
 import { ThumbUp, ThumbUpOutlined } from "@material-ui/icons";
 import "./userPhotos.css";
 import axios from "axios";
@@ -73,14 +75,29 @@ function UserPhotos(props) {
       console.log("Submit was pressed, re-rendering photos and comments");
   };
 
-  const handleLikeClick = photo_id => {
+  const axios_post_handle = (url, info, errMsg) => {
     // reflect user's like action to the server
-    axios.post(`/like/${photo_id}`, {action: props.loginUser.id}) // send new like action to server
-         .then(() => {
-           // use axios to get user's photos, therefore updating like buttons for all photos.
-           axios_fetch_photos(props.match.params.userId);
-         })
-         .catch(err => console.log("Like Update Failure: ", err));
+    axios.post(url, info) // send new like action to server
+      .then(() => {
+        // use axios to get user's photos, traggering the page updating.
+        axios_fetch_photos(props.match.params.userId);
+      })
+      .catch(err => console.log(errMsg, err));
+  };
+
+  // reflect user's like action to the server and udpate likes on the page
+  const handlePhotoLike = photo_id => {
+    axios_post_handle(`/like/${photo_id}`, {action: props.loginUser.id}, "Like Update Failure: ");
+  };
+
+  // reflect user's photo delete action to the server and udpate likes on the page
+  const handlePhotoDelete = photo_id => {
+    axios_post_handle(`/deletePhoto/${photo_id}`, {}, "Photo Delete Failure: ");
+  };
+
+  // reflect user's comment delete action to the server and udpate likes on the page
+  const handleCommentDetele = (comment_id, photo_id) => {
+    axios_post_handle(`/deleteComment/${comment_id}`, {photo_id: photo_id}, "Comment Delete Failure: ");
   };
 
   /**
@@ -123,6 +140,7 @@ function UserPhotos(props) {
     });
     return nameList;
   };
+
   
     // * Note: need to add "|| !user || !photos",
     // * so that after redirecting to another page, user and photos
@@ -131,13 +149,13 @@ function UserPhotos(props) {
     if (props.loginUser || !user || !photos) {
       // If there is user photo, then display user photos
       return ( photos && user && (
-          <Grid container justifyContent="flex-start" spacing={3} >
-            {/* Loop through all the photos */}
-            {photos.map(photo => (
+          <Grid container justifyContent="flex-start" spacing={3}>
+            {/* Loop through all the photos, if user has posted photos */}
+            {photos.length > 0 && photos.map(photo => (
               // Each photo's layout
-              <Grid item xs={4} key={photo._id} >
-                <Card style={{ border: "1px solid black" }} >
-                  {/* Each photo's author name and author post time */}
+              <Grid item xs={4} key={photo._id}>
+                <Card style={{ border: "1px solid black" }}>
+                  {/* Each photo's author avatar, name, post date, and delete button */}
                   <CardHeader
                     avatar={(
                       <Avatar style={{ backgroundColor: "#FF7F50", border: "1px solid black" }}>
@@ -149,24 +167,27 @@ function UserPhotos(props) {
                         <Typography>{`${user.first_name} ${user.last_name}`}</Typography>
                       </Link>
                     )}
-                    subheader={photo.date_time}
+                    subheader={photo.date_time} 
+                    action={(
+                      <IconButton title="Remove the photo" onClick={() => handlePhotoDelete(photo._id)}>
+                        <DeleteOutlineIcon />
+                      </IconButton>
+                    )}
                   />
-
-                  {/* Each photo's image */}
+                  {/* Each photo's filename */}
                   <CardMedia
                     component="img"
                     image={`./images/${photo.file_name}`}
                     alt="Anthor Post"
                   />
-
-                  {/* Like button */}
+                  {/* Like by users Info */}
                   <Typography variant="button" style={{ marginLeft: "6px", textTransform: "none"}}>
                     {photo.likes.length > 0 ?
                     `Liked by ${likesNameList(photo).map(name => name).join(", ")}` : ``}
                   </Typography>
-                  <Divider/>
-                  <CardActions style={{ paddingBottom: "0" }} >
-                    <Button onClick={() => handleLikeClick(photo._id)} style={{ margin: "0 auto" }}>
+                  <CardActions style={{ paddingBottom: "0" }}>
+                    {/* Like button */}
+                    <Button onClick={() => handlePhotoLike(photo._id)} style={{ margin: "0 auto" }}>
                       {likedByLoginUser(photo) ? 
                       <ThumbUp color="secondary" /> : <ThumbUpOutlined color="action" />}
                       <Typography variant="button" style={{ marginLeft: "5px"}} >
@@ -174,7 +195,6 @@ function UserPhotos(props) {
                       </Typography>
                     </Button>
                   </CardActions>
-
                   {/* Comments' layout */}
                   <CardContent style={{ paddingTop: "0" }}>
                     {/* Loop through all comments under the photo */}
@@ -196,14 +216,17 @@ function UserPhotos(props) {
                           color="textSecondary"
                           gutterBottom
                         >
-                        {convertDate(c.date_time)}
+                          {convertDate(c.date_time)} 
+                          {/* Remove button for each comment */}
+                          <IconButton title="Delete the comment" onClick={() => handleCommentDetele(c._id, photo._id)}>
+                            <DeleteOutlineIcon fontSize="small"  />
+                          </IconButton>
                         </Typography>
                         <Typography variant="body1">
                           {`"${c.comment}"`}
                         </Typography>
                       </List>
                     ))}
-
                     {/* Comment dialog box */}
                     <CommentDialog
                       onCommentSumbit={handleCommentSumbit}
@@ -213,6 +236,12 @@ function UserPhotos(props) {
                 </Card>
               </Grid>
             ))}
+            {/* Display a prompt if user has NOT yet posted any photos */}
+            {photos.length === 0 && (
+              <Typography>
+                This user has not posted any photos yet.
+              </Typography>
+            )}
           </Grid>
         )
       );

@@ -43,16 +43,26 @@ function UserDetail(props) {
    * * a specific user detail page will be rendered.
    * * Project 7 extra credit: works when first load or refreshing the page.
    */
-  const { history } = props; // help direct to loginUser's detail page
+  // const { history } = props; // help direct to loginUser's detail page
+  // useEffect(() => {
+  //   if (props.match.params.userId === "undefined") {
+  //     // If the URL parameter is "undefined", redirect to the logged-in user's page
+  //     history.replace(`/users/${props.loginUser.id}`);
+  //   } else if (props.match.params.userId) {
+  //     // If the URL parameter is defined, fetch the specified user's data
+  //     axios_fetchUserFrom(`/user2/${props.match.params.userId}`);
+  //   }
+  // }, [props.match.params.userId]);
+
   useEffect(() => {
-    if (props.match.params.userId === "undefined") {
-      // If the URL parameter is "undefined", redirect to the logged-in user's page
-      history.replace(`/users/${props.loginUser.id}`);
-    } else if (props.match.params.userId) {
+    console.log(props.match.params.userId, " is type of ", typeof props.match.params.userId);
+    if (props.match.params.userId !== 'undefined') {
       // If the URL parameter is defined, fetch the specified user's data
+      console.log("Sending ", props.match.params.userId, " to Server...");
       axios_fetchUserFrom(`/user2/${props.match.params.userId}`);
     }
   }, [props.match.params.userId]);
+
 
 
   // * Note: need to add "|| !this.state.user" so that after 
@@ -64,6 +74,8 @@ function UserDetail(props) {
     return (
       user && (
         <Grid container>
+
+          {/* User basic info */}
           <Grid item xs={12}>
             <Typography color="textSecondary">Name:</Typography>
             <Typography variant="h6" gutterBottom>{`${user.first_name} ${user.last_name}`}</Typography>
@@ -75,48 +87,47 @@ function UserDetail(props) {
             <Typography variant="h6" gutterBottom>{`${user.occupation}`}</Typography>
           </Grid>
 
-            {/* most commented photo and most recently uploaded photo */}
-            <Grid item xs={12} style={{ display: "flex", margin: "20px auto", justifyContent: 'center' }}>
-              <Card style={{ maxWidth: 250, margin: "0 20px" }}>
-                <CardContent>
-                  <Typography gutterBottom variant="h6" component="div">Most Recently Uploaded Photo</Typography>
-                </CardContent>
-                <CardActionArea to={user && `/photos/${user._id}`} component={Link}>
-                  <CardMedia
-                    component="img"
-                    image={`./images/${user.mostRecentPhotoName}`}
-                    alt="photo"
-                  />
-                </CardActionArea>
-                <CardContent>
-                  <Typography variant="body2">
-                    {`Date`}
-                  </Typography>
-                  <Divider/>
-                  <Typography variant="body2">
-                    {`${user.mostRecentPhotoDate}`}
-                  </Typography>
-                </CardContent>
-              </Card>
-              <Card style={{ maxWidth: 250, margin: "0 20px" }}>
-                <CardContent>
-                  <Typography gutterBottom variant="h6" component="div">Most Commented Photo</Typography>
-                </CardContent>
-                <CardActionArea to={user && `/photos/${user._id}`} component={Link}>
-                  <CardMedia
-                    component="img"
-                    image={`./images/${user.mostCommentedPhotoName}`}
-                    alt="photo"
-                  />
-                </CardActionArea>
-                <CardContent>
-                  <Typography variant="body2">
-                      {`${user.commentsCount} comment${user.commentsCount >= 2 ? "s" : ""}`}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+            {/* Only show if user has any photos posted, most commented photo and most recently uploaded photo */}
+            {user.mostRecentPhotoName && (
+              <Grid item xs={12} style={{ display: "flex", margin: "20px auto", justifyContent: 'center' }}>
+                <Card style={{ maxWidth: 250, margin: "0 20px" }}>
+                  <CardContent>
+                    <Typography gutterBottom variant="h6" component="div">Most Recently Uploaded Photo</Typography>
+                  </CardContent>
+                  <CardActionArea to={user && `/photos/${user._id}`} component={Link}>
+                    <CardMedia
+                      component="img"
+                      image={`./images/${user.mostRecentPhotoName}`}
+                      alt="photo"
+                    />
+                  </CardActionArea>
+                  <CardContent>
+                    <Typography variant="body2">
+                      {`${user.mostRecentPhotoDate}`}
+                    </Typography>
+                  </CardContent>
+                </Card>
+                <Card style={{ maxWidth: 250, margin: "0 20px" }}>
+                  <CardContent>
+                    <Typography gutterBottom variant="h6" component="div">Most Commented Photo</Typography>
+                  </CardContent>
+                  <CardActionArea to={user && `/photos/${user._id}`} component={Link}>
+                    <CardMedia
+                      component="img"
+                      image={`./images/${user.mostCommentedPhotoName}`}
+                      alt="photo"
+                    />
+                  </CardActionArea>
+                  <CardContent>
+                    <Typography variant="body2">
+                        {`${user.commentsCount} comment${user.commentsCount >= 2 ? "s" : ""}`}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid> 
+            )}
          
+         {/* Button for Seeing all user photo */}
           <Grid item style={{margin: "20px auto"}}>
             <Button
               size="large"

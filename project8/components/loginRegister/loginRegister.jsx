@@ -13,6 +13,7 @@ class LoginRegister extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      loginId: "",
       loginName: "",
       password: "",
       loginMessage: "", // use for prompting login info under login submit button
@@ -54,11 +55,12 @@ class LoginRegister extends React.Component {
       .post("/admin/login", loginUser) // POST request sent!
       .then(response => {   // Handle success
         console.log(`** LoginRegister: loggin Success! **`); 
-        this.props.onLoginUserChange(response.data);  // { first_name: , _id: }, Passing back loggin user data and logged info to TopBar
+        console.log("Printing response.data: ", response.data);
+        this.setState({ loginId: response.data.id});
+        this.props.onLoginUserChange(response.data);  // { first_name: , id: }, Passing back loggin user data and logged info to TopBar
       })
       .catch(error => {     // Handle error
         console.log(`** LoginRegister: loggin Fail! **`); 
-        console.log(error.response.data.message);
         this.setState({ loginMessage: error.response.data.message });
         this.props.onLoginUserChange(null);  // Pass back info to TopBar
       });
@@ -147,7 +149,7 @@ class LoginRegister extends React.Component {
   render() {
     // Handle jumping into the login User's detail page if user is authorizedx
     if (this.props.loginUser) {
-      return <Redirect from="/login-register" to={`/users/${this.props.loginUser._id}`} />;
+      return <Redirect from="/login-register" to={`/users/${this.state.loginId}`} />;
        // the state prop in <Redirect> is used to pass data between components when using client-side routing
     }
 

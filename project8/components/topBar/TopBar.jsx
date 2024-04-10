@@ -18,7 +18,6 @@ import { CloudUpload, ExitToApp, AddAPhotoOutlined, CloseRounded } from "@materi
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 
 
-
 /**
  * * Jian Zhong
  *  Defining a TopBar, a React componment of CS142 project #5
