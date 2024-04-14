@@ -13,7 +13,7 @@ https://web.stanford.edu/class/cs142/
 ✅ [Project 8](https://github.com/a2677331/Stanford-CS142/tree/main/project8) 
 - [x] User Story #1 (Extend user profile detial with usage)
 - [x] User Story #6 (Photo like votes)
-- [ ] User Story #5 (Deleting comments, photos, and users)
+- [x] User Story #5 (Deleting comments, photos, and users)
 
 ### Screenshots
 ![1](https://github.com/a2677331/Stanford-CS142/blob/main/p1.png)
