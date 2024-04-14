@@ -21,4 +21,5 @@ https://web.stanford.edu/class/cs142/
 ![3](https://github.com/a2677331/Stanford-CS142/blob/main/p3.png)
 ![4](https://github.com/a2677331/Stanford-CS142/blob/main/p4.png)
 ![5](https://github.com/a2677331/Stanford-CS142/blob/main/p5.png)
+![6](https://github.com/a2677331/Stanford-CS142/blob/main/p6.png)
 
