@@ -7,7 +7,6 @@ import {
   CardMedia,
   CardContent,
   CardActionArea,
-  Divider
 } from "@material-ui/core";
 import { Link, Redirect } from "react-router-dom";
 import "./userDetail.css";
@@ -43,34 +42,20 @@ function UserDetail(props) {
    * * a specific user detail page will be rendered.
    * * Project 7 extra credit: works when first load or refreshing the page.
    */
-  // const { history } = props; // help direct to loginUser's detail page
-  // useEffect(() => {
-  //   if (props.match.params.userId === "undefined") {
-  //     // If the URL parameter is "undefined", redirect to the logged-in user's page
-  //     history.replace(`/users/${props.loginUser.id}`);
-  //   } else if (props.match.params.userId) {
-  //     // If the URL parameter is defined, fetch the specified user's data
-  //     axios_fetchUserFrom(`/user2/${props.match.params.userId}`);
-  //   }
-  // }, [props.match.params.userId]);
-
   useEffect(() => {
-    console.log(props.match.params.userId, " is type of ", typeof props.match.params.userId);
-    if (props.match.params.userId !== 'undefined') {
-      // If the URL parameter is defined, fetch the specified user's data
-      console.log("Sending ", props.match.params.userId, " to Server...");
+    // If the URL parameter is dfined, fetch the specified user's data
+    if (props.match.params.userId) {
       axios_fetchUserFrom(`/user2/${props.match.params.userId}`);
     }
   }, [props.match.params.userId]);
 
 
 
-  // * Note: need to add "|| !this.state.user" so that after 
-  // * redirecting to another page, this.state.user
+  // * Note: need to add "!user" so that after 
+  // * redirecting to another page, user
   // * won't be accessed on another page,
   // * else it will cause unmount error in browser's console 
   if (props.loginUser || !user) {
-    console.log("Login user in UserDetail: ", props.loginUser);
     return (
       user && (
         <Grid container>

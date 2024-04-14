@@ -30,7 +30,7 @@ function PhotoShare() {
   const handleUserNameChange = name => {
     console.log("Setting Viewing User to: ", name);
     setUserName(name);
-  }
+  };
 
   /**
    * To get login user name from child component and return back for TopBar to display

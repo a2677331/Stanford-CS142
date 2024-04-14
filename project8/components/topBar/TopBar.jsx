@@ -74,9 +74,7 @@ function TopBar(props) {
    */
   useEffect(() => {
     // Only when is not on login page, then use Axios to send request and set the version state variable.
-    if (!props.location.pathname.includes("/login-register")) {
-      axios_fetchVersion();
-    }
+    axios_fetchVersion();
   }, []); // []: only want to fetch version once, not every render
 
   /**
@@ -151,7 +149,7 @@ function TopBar(props) {
 
         {/* Display greeting to Login User*/}
         <Typography variant="h5" style={{ flexGrow: 1 }}>
-          {console.log("Login user in TopBar: ", props.loginUser)}
+          {console.log("Login user in TopBar: ", props)}
           {props.loginUser
             ? `👋 Welcome back, ${props.loginUser.first_name}!`
             : "😄 Please Login"}

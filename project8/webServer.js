@@ -457,7 +457,6 @@ app.get('/user/:id', hasSessionRecord, function (request, response) {
                 userObj.logged_user_first_name = request.session.sessionUserFirstName; // save logged user first name for TopBar
                 userObj.logged_user_last_name = request.session.sessionUserLastName;
                 userObj.logged_user_id = request.session.sessionUserID;
-                console.log(`** Server: login user's first name: ${userObj.logged_user_first_name} found! **`);
                 response.status(200).json(userObj); // response the data back to the frontend browser
             }
         })
@@ -604,11 +603,13 @@ app.get('/photosOfUser/:id', hasSessionRecord, function (request, response) {
             response.status(400).json({ message: `Photos with user id ${id}: Not Found` });
         }
 
-        console.log(`** Server: found /photosOfUser/${id} Successfully! **`, photosData);
         const photos = JSON.parse(JSON.stringify(photosData)); // get data from server and convert to JS data
         if (photos.length === 0) {
-            console.log("This user has no photos yet.");
-            response.status(200).json(photos);
+            console.log(`Sending photos of Null value to front-end: `, null);
+            response.status(200).json(null); // ! but fixed by replacing 'photos' with 'null'
+            // ! Bug1 fixed temperally: inifinte loops if refresh the user photos' page 
+            // ! when user has no photos posted yet
+            // ! but refreshing the page works when user has one or more photos posted.
         }
 
         /**
@@ -694,8 +695,8 @@ app.post('/like/:photo_id', (request, response) => {
                         photo.likes.splice(indexToRemove, 1);
                     }
 
-                    // ! Why this filter() doesn't work ???????????????????????????????????????????? (OK)
                     // photo.likes = photo.likes.filter(id => id !== userID); // remove the user id
+                    // ! Why this filter() doesn't work ? (OK)
                     // * MongoDB's update operation didn't handle the array replacement correctly
                     // * MongoDB recommands modifying the original array to work correctly.
                     // * When you directly assign a new array to photo.likes, Mongoose might not detect 
@@ -819,7 +820,6 @@ app.post('/deletePhoto/:id', async (request, response) => {
             console.log("Photo not found");
             response.status(404).json({ message: 'Photo not found' });
         }
-        console.log("Photo to be deleted: ", deleted_photo);
         response.status(200).json({ message: "Photo deleted successfully!" });
     } catch(error) {
         console.error('Error deleting comment:', error.message);
