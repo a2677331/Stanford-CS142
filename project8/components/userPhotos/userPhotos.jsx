@@ -67,9 +67,10 @@ function UserPhotos(props) {
     if (props.match.params.userId) {
       axios_fetch_user(props.match.params.userId);
 
-      // ! Bug1: inifinte loops if refresh the page, when user has no photos posted yet
-      // !    but refreshing the page works when user has one or more photos posted.
-      // ! Bug fixed temperally in line 609 in webServer.js
+      // * Bug1: inifinte loops if refresh the page, when user has no photos posted yet
+      // * but refreshing the page works when user has one or more photos posted.
+      // * Bug fixed temperally in line 609 in webServer.js
+      // ! Still has one bug: when photo is newly update, if there is no comment or like, refresh the page would lead to crash.
       axios_fetch_photos(props.match.params.userId);
     }
   }, [props.photoIsUploaded, props.match.params.userId]);
