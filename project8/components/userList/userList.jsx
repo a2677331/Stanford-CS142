@@ -21,46 +21,30 @@ function UserList(props) {
   const [selectedButtonIndex, setSelectedButtonIndex] = useState(null);
 
   // Use Axios to send request and update the users state variable. 
-  const axios_fetchData = () => {
+  const axios_fetchUser = () => {
     axios
-    .get("http://localhost:3000/user/list") // user list URL
-    .then(response => { // Handle success
-      setUser(response.data);
-      console.log("** UserList: fetched User List **");
-    })
-    .catch(error => {   // Handle error
-      console.log(`** Error: ${error.message} **\n`);
-      if (axios.isCancel(error)) {
-        console.log('Request canceled', error.message);
-      } else if (error.response) {
-        // if status code from server is out of the range of 2xx.
-        console.log("** Error: status code from server is out of the range of 2xx. **\n", error.response.status);
-      } else if (error.request) {
-        // if request was made and no response was received.
-        console.log("** Error: request was made and no response was received. **\n", error.request);
-      } else {
-        // something happened in the setting up the request
-        console.log("** Error: something happened in the setting up the request. **\n", error.message);
-      }
-    });
+      .get("http://localhost:3000/user/list") // user list URL
+      .then(response => { // Handle success
+        console.log("** UserList: fetched User List **");
+        setUser(response.data);
+      })
+      .catch(error => {   // Handle error
+        console.log(`** UserList Error: ${error.message} **`);
+      });
   };
 
   // to populate user list on side bar after an user logs in, and refresh page when logged
   useEffect(() => {
-    if (props.loginUser) {
-      axios_fetchData();
-    }
-  }, [props.loginUser]);
+    axios_fetchUser();
+  }, []);
 
   // get the button clicked index on the user list
-  const handleClick = index => {
-    setSelectedButtonIndex(index); // update selected button index
-  };
+  const handleClick = index => setSelectedButtonIndex(index); // update selected button index
 
   // Rendering below
   let userList; // <Link> component
 
-  // The user list only displays if the current user is logged in
+  // The user list only displays if the user is logged in
   if (users && props.loginUser) {
     userList = users.map((user, index) => (
       <React.Fragment key={index}>
@@ -85,8 +69,9 @@ function UserList(props) {
       </React.Fragment>
     ));
   }
-  return <List component="nav">{userList}</List>;
 
+
+  return <List component="nav">{userList}</List>;
 }
 
 export default UserList;

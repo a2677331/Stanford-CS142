@@ -15,7 +15,7 @@ import LoginRegister from './components/loginRegister/loginRegister';
 function PhotoShare() {
   const [photoIsUploaded, setPhotoIsUploaded] = useState(false);
   const [userName, setUserName] = useState(null);     // which user the login user is currently viewing
-  const [loginUser, setLoginUser] = useState(null);   // use to check if an user is logged
+  const [loginUser, setLoginUser] = useState();   // use to check if an user is logged
   /**
    * * login user's first name and id
    * * fetched from loginRegister component and pass up to the whole App
@@ -50,9 +50,6 @@ function PhotoShare() {
   };
 
 
-  // Rendering components:
-  const paths = ["/users/:userId", "/photos/:userId", ""]; // paths to render in the Topbar
-
   return (
     <HashRouter>
       <div>
@@ -60,22 +57,12 @@ function PhotoShare() {
           
           {/* TopBar View */}
           <Grid item xs={12}>
-            <Switch>
-              {/* Use paths.map() to populate the same Topbar component for different routes */}
-              {paths.map((path) => (
-                <Route key={path} path={path}>
-                  {props => (
-                    <TopBar
-                      {...props}
-                      onLoginUserChange={handleLoginUserChange}
-                      onPhotoUpload={handlePhotoUpload}
-                      userName={userName}
-                      loginUser={loginUser}
-                    />
-                  )}
-                </Route>
-              ))}
-            </Switch>
+              <TopBar 
+                onLoginUserChange={handleLoginUserChange} 
+                onPhotoUpload={handlePhotoUpload} 
+                userName={userName} 
+                loginUser={loginUser} 
+              />
           </Grid>
           <div className="cs142-main-topbar-buffer" />
 
@@ -91,6 +78,7 @@ function PhotoShare() {
             <Paper className="cs142-main-grid-item" elevation={3} style={{ backgroundColor: "#abd1c6", height: '100%', marginTop: '1%', marginRight: '2%', border: "4px solid black" }}>
               {/* ALl unauthorized visit would go to login page */}
               <Switch>
+
                 {/* User detail View */}
                 <Route path="/users/:userId">
                   {props => (
@@ -101,8 +89,8 @@ function PhotoShare() {
                       loginUser={loginUser}
                     />
                   )}
-                  {/* Pass "props": to use "this.props.match.params" */}
                 </Route>
+
                 {/* User photo View */}
                 <Route path="/photos/:userId">
                   {props => (
@@ -115,20 +103,24 @@ function PhotoShare() {
                     />
                   )}
                 </Route>
+
                 {/* Login/Register View */}
                 <Route path="/login-register">
                   <LoginRegister
                     onLoginUserChange={handleLoginUserChange}
                     loginUser={loginUser}
                   />
-                </Route>                  
-                {/* All the other addresses will go to login page */}
+                </Route>     
+
+                {/* Defaulted View for all the other addresses */}
                 <Route>
                   <Redirect to={`/login-register`} />
                 </Route>
+
               </Switch>
             </Paper>
           </Grid>
+
         </Grid>
       </div>
     </HashRouter>

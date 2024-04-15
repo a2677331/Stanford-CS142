@@ -174,8 +174,8 @@ function hasSessionRecord(request, response, next) {
         next(); // continue to next step
     }
     else {
-        console.log("Session: NO active user!");
-        response.status(401).json({ message: 'Unauthorized' });
+        console.log("Session: the user is not logged in.");
+        response.status(401).send('The user is not logged in.');
     }
 }
 

@@ -155,12 +155,12 @@ function TopBar(props) {
             : "😄 Please Login"}
         </Typography>
 
-        {/* Display viewing user's name */}
+        {/* Display 'photos of' or 'Info of' of the viewing user's name */}
         {props.loginUser && (
-          <Typography variant="h5" style={{ flexGrow: 1 }}>
-            {props.match.path.includes("/photos/") && "Photos of "}
-            {props.match.path.includes("/users/") && "Info of "}
-            {props.match.params.userId && `${props.userName}`}
+          <Typography variant="h5">
+            {window.location.href.includes("/photos/") && "Photos of "}
+            {window.location.href.includes("/users/") && "Info of "}
+            {props.userName}
           </Typography>
         )}
 

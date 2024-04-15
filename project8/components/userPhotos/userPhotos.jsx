@@ -64,16 +64,16 @@ function UserPhotos(props) {
    * @param props.photoIsUploaded: if a new photo was updated
    */
   useEffect(() => {
-    if (props.match.params.userId) {
-      axios_fetch_user(props.match.params.userId);
+    axios_fetch_user(props.match.params.userId);
+  }, [props.match.params.userId]);
 
-      // * Bug1: inifinte loops if refresh the page, when user has no photos posted yet
-      // * but refreshing the page works when user has one or more photos posted.
-      // * Bug fixed temperally in line 609 in webServer.js
-      // ! Still has one bug: when photo is newly update, if there is no comment or like, refresh the page would lead to crash.
-      axios_fetch_photos(props.match.params.userId);
-    }
-  }, [props.photoIsUploaded, props.match.params.userId]);
+  useEffect(() => {
+    axios_fetch_photos(props.match.params.userId);
+    // * Bug1: inifinte loops if refresh the page, when user has no photos posted yet
+    // * but refreshing the page works when user has one or more photos posted.
+    // * Bug fixed temperally in line 609 in webServer.js
+    // ! Still has one bug: when photo is newly update, if there is no comment or like, refresh the page would lead to crash.
+  }, [props.photoIsUploaded]);
 
   /**
    * To re-fetch data from server once comment is submitted,
@@ -184,27 +184,30 @@ function UserPhotos(props) {
                   </IconButton>
                 )}
               />
+              
               {/* Each photo's filename */}
               <CardMedia
                 component="img"
                 image={`./images/${photo.file_name}`}
                 alt="Anthor Post"
               />
+
               {/* Like by users Info */}
               <Typography variant="button" style={{ marginLeft: "6px", textTransform: "none"}}>
                 {photo.likes.length > 0 ?
                 `Liked by ${likesNameList(photo).map(name => name).join(", ")}` : ``}
               </Typography>
+
+              {/* Like button */}
               <CardActions style={{ paddingBottom: "0" }}>
-                {/* Like button */}
                 <Button onClick={() => handlePhotoLike(photo._id)} style={{ margin: "0 auto" }}>
-                  {likedByLoginUser(photo) ? 
-                  <ThumbUp color="secondary" /> : <ThumbUpOutlined color="action" />}
+                  {likedByLoginUser(photo) ? <ThumbUp color="secondary" /> : <ThumbUpOutlined color="action" />}
                   <Typography variant="button" style={{ marginLeft: "5px"}} >
                     {photo.likes.length}
                   </Typography>
                 </Button>
               </CardActions>
+
               {/* Comments' layout */}
               <CardContent style={{ paddingTop: "0" }}>
                 {/* Loop through all comments under the photo */}

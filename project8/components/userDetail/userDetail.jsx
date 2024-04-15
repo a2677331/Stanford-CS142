@@ -44,9 +44,7 @@ function UserDetail(props) {
    */
   useEffect(() => {
     // If the URL parameter is dfined, fetch the specified user's data
-    if (props.match.params.userId) {
-      axios_fetchUserFrom(`/user2/${props.match.params.userId}`);
-    }
+    axios_fetchUserFrom(`/user2/${props.match.params.userId}`);
   }, [props.match.params.userId]);
 
 
