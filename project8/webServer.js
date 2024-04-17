@@ -257,15 +257,22 @@ app.post('/photos/new', hasSessionRecord, (request, response) => {
         });
 
         // Under the name filename, store the new Photo object in the database
-        Photo.create({
-            file_name: filename,
-            date_time: timestamp,
-            user_id: request.session.sessionUserID
-        })
-            .then(() => console.log(`** Server: photo saved in the DB **`))
-            .catch(e =>  console.log(`** Error during photo saving into the DB: ${e} **`));
-       
-        response.status(200).send();  // must send back succeed response
+        Photo.create(
+            {
+                file_name: filename,
+                date_time: timestamp,
+                user_id: request.session.sessionUserID,
+                comments: [],
+                likes: [],
+            }, 
+            function(error, newPhoto) {
+                if (error) {
+                    response.status(400).send("unable to create new photo");
+                }
+                newPhoto.save();
+                response.status(200).send();  // must send back succeed response
+            }
+        );
     });
 });
 

@@ -36,7 +36,7 @@ function UserList(props) {
   // to populate user list on side bar after an user logs in, and refresh page when logged
   useEffect(() => {
     axios_fetchUser();
-  }, []);
+  }, [props.loginUser]);
 
   // get the button clicked index on the user list
   const handleClick = index => setSelectedButtonIndex(index); // update selected button index

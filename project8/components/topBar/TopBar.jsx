@@ -58,14 +58,14 @@ function TopBar(props) {
   // Use Axios to send POST request to server to add uploaded photo.
   const axios_sendPhoto = domForm => {
     axios
-    .post("photos/new", domForm)
-    .then(response => {
-      if (response.status === 200) {
-        props.onPhotoUpload(); // notify parent component
-        console.log("** TopBar: photo successfully uploaded **");
-      }
-    })
-    .catch(err => console.log("Error: photo uploaded error ", err));
+      .post("photos/new", domForm)
+      .then(response => {
+        if (response.status === 200) {
+          props.onPhotoUpload(); // notify parent component
+          console.log("** TopBar: photo successfully uploaded **");
+        }
+      })
+      .catch(err => console.log("Error: photo uploaded error ", err));
   };
 
    /**
@@ -75,7 +75,7 @@ function TopBar(props) {
   useEffect(() => {
     // Only when is not on login page, then use Axios to send request and set the version state variable.
     axios_fetchVersion();
-  }, []); // []: only want to fetch version once, not every render
+  }, [props.loginUser]); // []: only want to fetch version once, not every render
 
   /**
    * Handle image file: read the uploaded photo file and set it to "uploadInput" state variable
